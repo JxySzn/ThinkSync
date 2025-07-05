@@ -4,9 +4,9 @@ import type React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { GraduationCap, Github } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -22,6 +22,94 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
+// Toast style helpers for different types
+const baseToastStyle = {
+  fontFamily: "Outfit, sans-serif",
+  fontWeight: "bold",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+};
+
+const errorToastOptions = {
+  style: {
+    ...baseToastStyle,
+    background: "#ff3b3b", // strong red
+    color: "#fff",
+  },
+  duration: 6000,
+  action: (
+    <button
+      onClick={() => toast.dismiss()}
+      style={{
+        color: "#fff",
+        background: "transparent",
+        border: "none",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        cursor: "pointer",
+        marginLeft: "1rem",
+        fontFamily: "Outfit, sans-serif",
+      }}
+      aria-label="Close"
+    >
+      ×
+    </button>
+  ),
+};
+
+const successToastOptions = {
+  style: {
+    ...baseToastStyle,
+    background: "#22c55e", // strong green
+    color: "#fff",
+  },
+  duration: 6000,
+  action: (
+    <button
+      onClick={() => toast.dismiss()}
+      style={{
+        color: "#fff",
+        background: "transparent",
+        border: "none",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        cursor: "pointer",
+        marginLeft: "1rem",
+        fontFamily: "Outfit, sans-serif",
+      }}
+      aria-label="Close"
+    >
+      ×
+    </button>
+  ),
+};
+
+const warningToastOptions = {
+  style: {
+    ...baseToastStyle,
+    background: "#facc15", // strong yellow
+    color: "#1a1a1a", // dark text for contrast
+  },
+  duration: 6000,
+  action: (
+    <button
+      onClick={() => toast.dismiss()}
+      style={{
+        color: "#1a1a1a",
+        background: "transparent",
+        border: "none",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        cursor: "pointer",
+        marginLeft: "1rem",
+        fontFamily: "Outfit, sans-serif",
+      }}
+      aria-label="Close"
+    >
+      ×
+    </button>
+  ),
+};
+
 const formSchema = z.object({
   email: z.string().email("Invalid email address").min(1, "Email is required"),
   password: z.string().min(1, "Password is required"),
@@ -31,6 +119,7 @@ export function SignInForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -49,57 +138,26 @@ export function SignInForm({
       const data = await res.json();
       if (!res.ok || data.error) {
         if (data.error === "User not found") {
-          toast.error("No account found for this email.", {
-            icon: "🚫",
-            style: {
-              background: "#fee2e2",
-              color: "#b91c1c",
-            },
-          });
+          toast.error("No account found for this email.", errorToastOptions);
         } else if (data.error === "Invalid credentials") {
-          toast.error("Incorrect password.", {
-            icon: "🔒",
-            style: {
-              background: "#fee2e2",
-              color: "#b91c1c",
-            },
-          });
+          toast.error("Incorrect password.", errorToastOptions);
         } else if (data.error === "Not verified") {
-          toast.error("Please verify your email before signing in.", {
-            icon: "📧",
-            style: {
-              background: "#fef9c3",
-              color: "#b45309",
-            },
-          });
+          toast.error(
+            "Please verify your email before signing in.",
+            warningToastOptions
+          );
         } else {
-          toast.error(data.error || "Sign in failed.", {
-            icon: "❌",
-            style: {
-              background: "#fee2e2",
-              color: "#b91c1c",
-            },
-          });
+          toast.error(data.error || "Sign in failed.", errorToastOptions);
         }
         return;
       }
-      toast.success("Sign in successful! Redirecting...", {
-        icon: "✅",
-        style: {
-          background: "#dcfce7",
-          color: "#166534",
-        },
-      });
-      // Optionally redirect to home page after a short delay
-      // router.push("/");
-    } catch (error) {
-      toast.error("Network error. Please try again.", {
-        icon: "🌐",
-        style: {
-          background: "#fef9c3",
-          color: "#b45309",
-        },
-      });
+      toast.success("Sign in successful! Redirecting...", successToastOptions);
+      // Redirect to home page after a short delay
+      setTimeout(() => {
+        router.push("/home");
+      }, 1500);
+    } catch {
+      toast("Network error. Please try again.", warningToastOptions);
     }
   }
 
@@ -115,7 +173,7 @@ export function SignInForm({
             <GraduationCap className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">
-            Signup For Your Scholarly Account
+            Signup For Your ThinkSync Account
           </h1>
         </div>
 

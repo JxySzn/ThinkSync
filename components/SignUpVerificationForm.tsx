@@ -10,7 +10,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useSignupFlow } from "./useSignupFlow";
 
 export function SignUpVerificationForm({
@@ -23,8 +23,7 @@ export function SignUpVerificationForm({
   setShowLeaveAlert?: (v: boolean) => void;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { signupToken, setSignupToken, email } = useSignupFlow();
+  const { email } = useSignupFlow();
   const [otp, setOtp] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [internalShowLeaveAlert, setInternalShowLeaveAlert] = useState(false);
@@ -85,7 +84,7 @@ export function SignUpVerificationForm({
       }
       toast.success("OTP verified! Proceed to set your username.");
       router.push(`/sign_up_user_name?email=${encodeURIComponent(email)}`);
-    } catch (error) {
+    } catch {
       toast.error("Network error. Please try again.");
     }
   };

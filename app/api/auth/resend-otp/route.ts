@@ -5,12 +5,19 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "changeme";
 
+interface JWTPayload {
+  email: string;
+  otp?: string;
+  otpVerified?: boolean;
+  [key: string]: unknown;
+}
+
 export async function POST(req: NextRequest) {
   const { signupToken } = await req.json();
   if (!signupToken)
     return NextResponse.json({ error: "Missing signupToken" }, { status: 400 });
   try {
-    const payload = jwt.verify(signupToken, JWT_SECRET) as any;
+    const payload = jwt.verify(signupToken, JWT_SECRET) as JWTPayload;
     if (!payload.email) {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 });
     }

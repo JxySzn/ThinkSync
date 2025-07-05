@@ -1,6 +1,7 @@
 import { SignUpUsernameForm } from "@/components/SignUpUsernameForm";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function Page() {
   return (
@@ -25,7 +26,9 @@ export default function Page() {
         <div className="flex justify-center gap-2 md:justify-start"></div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <SignUpUsernameForm />
+            <Suspense fallback={<div>Loading...</div>}>
+              <SignUpUsernameForm />
+            </Suspense>
           </div>
         </div>
       </div>

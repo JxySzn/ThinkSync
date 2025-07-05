@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/form";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useSignupFlow } from "./useSignupFlow";
-import { useRouter } from "next/navigation";
 
 // Define the form schema for validation
 const formSchema = z.object({
@@ -28,6 +27,93 @@ const formSchema = z.object({
   email: z.string().email("Invalid email address").min(1, "Email is required"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
 });
+
+// Toast style helpers for different types
+const baseToastStyle = {
+  fontFamily: "Outfit, sans-serif",
+  color: "#fff",
+  fontWeight: "bold",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+};
+
+const errorToastOptions = {
+  style: {
+    ...baseToastStyle,
+    background: "#ff3b3b", // strong red
+  },
+  duration: 6000,
+  action: (
+    <button
+      onClick={() => toast.dismiss()}
+      style={{
+        color: "#fff",
+        background: "transparent",
+        border: "none",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        cursor: "pointer",
+        marginLeft: "1rem",
+        fontFamily: "Outfit, sans-serif",
+      }}
+      aria-label="Close"
+    >
+      ×
+    </button>
+  ),
+};
+
+const successToastOptions = {
+  style: {
+    ...baseToastStyle,
+    background: "#22c55e", // strong green
+  },
+  duration: 6000,
+  action: (
+    <button
+      onClick={() => toast.dismiss()}
+      style={{
+        color: "#fff",
+        background: "transparent",
+        border: "none",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        cursor: "pointer",
+        marginLeft: "1rem",
+        fontFamily: "Outfit, sans-serif",
+      }}
+      aria-label="Close"
+    >
+      ×
+    </button>
+  ),
+};
+
+const warningToastOptions = {
+  style: {
+    ...baseToastStyle,
+    background: "#facc15", // strong yellow
+    color: "#1a1a1a", // dark text for contrast
+  },
+  duration: 6000,
+  action: (
+    <button
+      onClick={() => toast.dismiss()}
+      style={{
+        color: "#1a1a1a",
+        background: "transparent",
+        border: "none",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+        cursor: "pointer",
+        marginLeft: "1rem",
+        fontFamily: "Outfit, sans-serif",
+      }}
+      aria-label="Close"
+    >
+      ×
+    </button>
+  ),
+};
 
 export function SignUpForm({
   className,
@@ -43,7 +129,6 @@ export function SignUpForm({
     },
   });
 
-  const router = useRouter();
   const { startSignupFlow } = useSignupFlow();
 
   // Handle form submission
@@ -56,13 +141,19 @@ export function SignUpForm({
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        toast.error(data.error || "Registration failed");
+        toast.error(data.error || "Registration failed", errorToastOptions);
         return;
       }
-      toast.success("Registration successful! Check your email for the OTP.");
+      toast.success(
+        "Registration successful! Check your email for the OTP.",
+        successToastOptions
+      );
       startSignupFlow(undefined, values.email); // Only store email for DB-backed OTP
-    } catch (error) {
-      toast.error("Failed to submit the form. Please try again.");
+    } catch {
+      toast(
+        "Network error. Please check your connection.",
+        warningToastOptions
+      );
     }
   }
 
@@ -78,7 +169,7 @@ export function SignUpForm({
             <GraduationCap className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">
-            Sign Into Your Scholarly Account
+            Sign Into Your ThinkSync Account
           </h1>
         </div>
         <div className="grid gap-6">

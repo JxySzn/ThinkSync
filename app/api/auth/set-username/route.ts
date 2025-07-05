@@ -1,41 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { connectToDatabase } from "@/lib/mongo";
+import PendingUser from "@/lib/models/PendingUser";
 import User from "@/lib/models/User";
 
-const JWT_SECRET = process.env.JWT_SECRET || "changeme";
-
 export async function POST(req: NextRequest) {
-  const { signupToken, username } = await req.json();
-  if (!signupToken || !username)
+  const { email, username } = await req.json();
+  if (!email || !username)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  try {
-    const payload = jwt.verify(signupToken, JWT_SECRET) as any;
-    if (!payload.otpVerified) {
-      return NextResponse.json({ error: "OTP not verified" }, { status: 400 });
-    }
-    await connectToDatabase();
-    // Check again if user exists (race condition safety)
-    const existing = await User.findOne({ email: payload.email });
-    if (existing) {
-      return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 200 }
-      );
-    }
-    // Create user in DB
-    await User.create({
-      fullname: payload.fullname,
-      email: payload.email,
-      password: payload.password,
-      verified: true,
-      username,
-    });
-    return NextResponse.json({ success: true });
-  } catch {
+
+  // Connect to database
+  await connectToDatabase();
+
+  // Find pending user with verified OTP
+  const pending = await PendingUser.findOne({ email, otpVerified: true });
+  if (!pending) {
     return NextResponse.json(
-      { error: "Invalid or expired token" },
+      { error: "OTP not verified or session expired" },
       { status: 400 }
     );
   }
+
+  // Check if user already exists
+  const existing = await User.findOne({ email });
+  if (existing) {
+    return NextResponse.json(
+      { error: "Email already registered" },
+      { status: 200 }
+    );
+  }
+
+  // Check if username is already taken
+  const existingUsername = await User.findOne({ username });
+  if (existingUsername) {
+    return NextResponse.json(
+      { error: "Username is already taken" },
+      { status: 400 }
+    );
+  }
+
+  // Create user in DB
+  await User.create({
+    fullname: pending.fullname,
+    email: pending.email,
+    password: pending.password,
+    verified: true,
+    username,
+  });
+  // Remove pending user
+  await PendingUser.deleteOne({ email });
+  return NextResponse.json({ success: true });
 }

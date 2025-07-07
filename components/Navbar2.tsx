@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   Menu,
@@ -64,122 +64,21 @@ export default function Navbar2() {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-20 bg-background shadow">
-      <nav className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <BookOpen className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">ThinkSync</span>
-          </Link>
-        </div>
-
-        {/* Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full"
-            />
+    <>
+      <header className="fixed top-0 left-0 w-full z-20 bg-background shadow">
+        <nav className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center">
+            <Link href="/home" className="flex items-center space-x-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <BookOpen className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold">ThinkSync</span>
+            </Link>
           </div>
-        </div>
 
-        <div className="flex items-center space-x-4">
-          {/* Create Post Button */}
-          <Button size="sm" className="hidden md:flex">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Post
-          </Button>
-
-          <ThemeToggle />
-
-          {/* Notification Bell */}
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </Button>
-
-          {/* User Avatar Dropdown */}
-          {!loading && user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-8 w-8 rounded-full"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/avatars/01.png" alt={user.fullname} />
-                    <AvatarFallback>
-                      {getAvatarInitials(user.fullname)}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.fullname}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-      </nav>
-
-      {/* Mobile Navigation */}
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="border-t bg-background md:hidden"
-        >
-          <div className="container space-y-1 px-4 py-4">
-            {/* Mobile Search */}
-            <div className="relative mb-4">
+          {/* Search Bar */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -189,37 +88,177 @@ export default function Navbar2() {
                 className="pl-10 w-full"
               />
             </div>
-
-            {/* Mobile Actions */}
-            <div className="flex flex-col space-y-2 pt-4">
-              <Button variant="ghost" className="justify-start">
-                <Bell className="mr-2 h-4 w-4" />
-                Notifications
-              </Button>
-              <Button className="justify-start">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Post
-              </Button>
-              <Button variant="ghost" className="justify-start">
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Button>
-              <Button variant="ghost" className="justify-start">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start text-red-600"
-                onClick={signOut}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </Button>
-            </div>
           </div>
-        </motion.div>
-      )}
-    </header>
+
+          <div className="flex items-center space-x-4">
+            {/* Create Post Button */}
+            <Button size="sm" className="hidden md:flex">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Post
+            </Button>
+
+            {/* Mobile Search Icon */}
+            <Button variant="ghost" size="sm" className="md:hidden">
+              <Search className="h-5 w-5" />
+            </Button>
+
+            {/* Desktop Notification Bell */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative hidden md:flex"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+
+            {/* User Avatar Dropdown */}
+            {!loading && user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="/avatars/01.png" alt={user.fullname} />
+                      <AvatarFallback>
+                        {getAvatarInitials(user.fullname)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {user.fullname}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/profile">
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </nav>
+      </header>
+
+      {/* Mobile Navigation - Slides in from right */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-30 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Mobile Menu Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-background border-l shadow-xl z-40 md:hidden"
+            >
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="text-lg font-semibold">Menu</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {/* Mobile Actions */}
+                  <div className="space-y-2">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Bell className="mr-3 h-4 w-4" />
+                      Notifications
+                      {unreadCount > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                    <Button className="w-full justify-start">
+                      <Plus className="mr-3 h-4 w-4" />
+                      Create Post
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <User className="mr-3 h-4 w-4" />
+                      Profile
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Settings className="mr-3 h-4 w-4" />
+                      Settings
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      onClick={signOut}
+                    >
+                      <LogOut className="mr-3 h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Footer with Theme Toggle */}
+                <div className="p-4 border-t">
+                  <ThemeToggle />
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

@@ -26,12 +26,10 @@ export default function PublicLayout({
         >
           <Navbar2 />
           <SidebarProvider>
-            <div style={{ display: "flex" }} className="pt-16">
-              <div className="pt-16">
-                <UserSidebar />
-              </div>
-              <div style={{ flex: 1 }}>{children}</div>
-            </div>
+            <UserSidebar />
+            <main className="w-full">
+              <div className="pt-16">{children}</div>
+            </main>
           </SidebarProvider>
           <Toaster />
         </ThemeProvider>

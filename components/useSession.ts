@@ -9,6 +9,15 @@ interface User {
   email: string;
   username: string;
   verified: boolean;
+  avatar?: string;
+  location?: string;
+  joinDate?: string;
+  online?: boolean;
+  followers?: string[];
+  following?: string[];
+  website?: string;
+  bio?: string;
+  birthDate?: string;
 }
 
 interface Session {

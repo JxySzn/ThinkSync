@@ -74,17 +74,19 @@ export default function Page() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Header Section */}
       <div className="relative">
-        {/* Cover Photo Area */}
-        <div className="h-48 bg-muted"></div>
-
         {/* Profile Info */}
         <div className="px-4 pb-4">
-          <div className="flex justify-between items-start -mt-16 mb-4">
+          <div className="flex justify-between items-start mt-8 mb-4">
             <div className="relative">
-              <Avatar className="w-32 h-32 border-4 border-background">
+              <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
                 <AvatarImage
                   src={user.avatar || "/placeholder.svg?height=128&width=128"}
                   alt="Profile"
+                  style={{
+                    objectFit: "cover",
+                    width: "100%",
+                    height: "100%",
+                  }}
                 />
                 <AvatarFallback className="text-2xl">
                   {user.fullname

@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, X, MapPin, Link, Calendar } from "lucide-react";
+import { ArrowLeft, Camera, MapPin, Link, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/useSession";
+import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
 
 export default function Page() {
   const router = useRouter();
@@ -27,7 +28,6 @@ export default function Page() {
     avatar: "",
   });
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [coverPreview, setCoverPreview] = useState("");
 
   useEffect(() => {
     async function fetchProfile() {
@@ -65,29 +65,18 @@ export default function Page() {
     }));
   };
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-        setFormData((prev) => ({
-          ...prev,
-          avatar: e.target?.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCoverChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setCoverPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      try {
+        const url = await uploadToCloudinary(file, "avatars");
+        setFormData((prev) => ({ ...prev, avatar: url }));
+      } catch {
+        alert("Failed to upload avatar");
+      }
     }
   };
 
@@ -158,68 +147,38 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Cover Photo Section */}
-      <div className="relative">
-        <div
-          className="h-48 bg-muted relative overflow-hidden"
-          style={{
-            backgroundImage: coverPreview ? `url(${coverPreview})` : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4">
-            <label htmlFor="cover-upload" className="cursor-pointer">
-              <div className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-colors">
-                <Camera className="w-5 h-5 text-white" />
-              </div>
-              <input
-                id="cover-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleCoverChange}
-                className="hidden"
-              />
-            </label>
-            {coverPreview && (
-              <button
-                onClick={() => setCoverPreview("")}
-                className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-colors"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Avatar Section */}
-        <div className="px-4 -mt-16 relative">
-          <div className="relative inline-block">
-            <Avatar className="w-32 h-32 border-4 border-background">
-              <AvatarImage
-                src={avatarPreview || "/placeholder.svg"}
-                alt="Profile"
-              />
-              <AvatarFallback className="text-2xl">JS</AvatarFallback>
-            </Avatar>
-            <label
-              htmlFor="avatar-upload"
-              className="absolute inset-0 cursor-pointer"
-            >
-              <div className="w-full h-full bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <Camera className="w-6 h-6 text-white" />
-              </div>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </label>
-            {/* Online indicator */}
-            <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-background"></div>
-          </div>
+      {/* Avatar Section */}
+      <div className="px-4 flex justify-center mt-8 mb-8">
+        <div className="relative inline-block">
+          <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
+            <AvatarImage
+              src={avatarPreview || "/placeholder.svg"}
+              alt="Profile"
+              style={{
+                objectFit: "cover",
+                width: "100%",
+                height: "100%",
+              }}
+            />
+            <AvatarFallback className="text-2xl">JS</AvatarFallback>
+          </Avatar>
+          <label
+            htmlFor="avatar-upload"
+            className="absolute inset-0 cursor-pointer"
+          >
+            <div className="w-full h-full bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <Camera className="w-6 h-6 text-white" />
+            </div>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </label>
+          {/* Online indicator */}
+          <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-background"></div>
         </div>
       </div>
 

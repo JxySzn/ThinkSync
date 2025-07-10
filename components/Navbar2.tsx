@@ -27,11 +27,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSession } from "./useSession";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Navbar2() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchResults, setSearchResults] = useState<
+    {
+      _id: string;
+      fullname: string;
+      username: string;
+    }[]
+  >([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showPopover, setShowPopover] = useState(false);
   const { user, loading, signOut } = useSession();
 
   // Fetch notifications
@@ -63,6 +77,35 @@ export default function Navbar2() {
       .slice(0, 2);
   };
 
+  // Fetch users as user types
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        setShowPopover(false);
+        return;
+      }
+      setSearchLoading(true);
+      setShowPopover(true);
+      try {
+        const res = await fetch(
+          `/api/users?query=${encodeURIComponent(searchQuery)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.users || []);
+        } else {
+          setSearchResults([]);
+        }
+      } catch {
+        setSearchResults([]);
+      }
+      setSearchLoading(false);
+    };
+    const timeout = setTimeout(fetchUsers, 300); // debounce
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-20 bg-background shadow">
@@ -78,16 +121,52 @@ export default function Navbar2() {
 
           {/* Search Bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
-            </div>
+            <Popover
+              open={
+                showPopover &&
+                (searchResults.length > 0 || searchLoading || !!searchQuery)
+              }
+              onOpenChange={setShowPopover}
+            >
+              <PopoverTrigger asChild>
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => searchQuery && setShowPopover(true)}
+                    className="pl-10 w-full"
+                  />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 mt-2">
+                {searchLoading ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Searching...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <ul>
+                    {searchResults.map((user) => (
+                      <li
+                        key={user._id}
+                        className="px-4 py-2 hover:bg-accent cursor-pointer flex flex-col"
+                      >
+                        <span className="font-medium">{user.fullname}</span>
+                        <span className="text-xs text-muted-foreground">
+                          @{user.username}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : searchQuery ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No users found.
+                  </div>
+                ) : null}
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -124,8 +203,18 @@ export default function Navbar2() {
                     variant="ghost"
                     className="relative h-8 w-8 rounded-full"
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/avatars/01.png" alt={user.fullname} />
+                    <Avatar className="h-8 w-8 overflow-hidden">
+                      <AvatarImage
+                        src={
+                          user.avatar || "/placeholder.svg?height=128&width=128"
+                        }
+                        alt={user.fullname}
+                        style={{
+                          objectFit: "cover",
+                          width: "100%",
+                          height: "100%",
+                        }}
+                      />
                       <AvatarFallback>
                         {getAvatarInitials(user.fullname)}
                       </AvatarFallback>

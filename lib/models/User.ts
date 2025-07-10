@@ -16,6 +16,7 @@ const UserSchema = new Schema({
   website: { type: String },
   bio: { type: String },
   birthDate: { type: Date },
+  coverPhoto: { type: String },
 });
 
 export default models.User || model("User", UserSchema);

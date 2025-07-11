@@ -67,7 +67,7 @@ export default function Navbar2() {
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-20 bg-background shadow">
-        <nav className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        <nav className="flex h-16 items-center justify-between max-w-[1400px] mx-auto">
           <AnimatePresence mode="wait">
             {isSearchMode ? (
               // Search Mode View
@@ -99,7 +99,7 @@ export default function Navbar2() {
                 className="flex items-center w-full justify-between"
                 key="normal-mode"
               >
-                <div className="flex items-center">
+                <div className="flex items-center pl-4 sm:pl-6 lg:pl-8">
                   <Link href="/home" className="flex items-center space-x-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                       <BookOpen className="h-5 w-5 text-primary-foreground" />
@@ -113,7 +113,7 @@ export default function Navbar2() {
                   <SearchBar />
                 </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 pr-4 sm:pr-6 lg:pr-8">
                   {/* Create Post Button */}
                   <Button size="sm" className="hidden md:flex">
                     <Plus className="mr-2 h-4 w-4" />

@@ -1,11 +1,10 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react";
+import { Calendar, Home, Inbox, Settings, Users } from "lucide-react";
 
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -29,9 +28,9 @@ const items = [
     icon: Calendar,
   },
   {
-    title: "Search",
+    title: "Communities",
     url: "#",
-    icon: Search,
+    icon: Users,
   },
   {
     title: "Settings",
@@ -45,7 +44,6 @@ export function UserSidebar() {
     <Sidebar className="pt-16">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

@@ -13,9 +13,9 @@ import {
   LogOut,
   User,
   Settings,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -27,25 +27,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSession } from "./useSession";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import SearchBar from "./SearchBar";
 
 export default function Navbar2() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [searchResults, setSearchResults] = useState<
-    {
-      _id: string;
-      fullname: string;
-      username: string;
-    }[]
-  >([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [showPopover, setShowPopover] = useState(false);
   const { user, loading, signOut } = useSession();
 
   // Fetch notifications
@@ -77,195 +64,161 @@ export default function Navbar2() {
       .slice(0, 2);
   };
 
-  // Fetch users as user types
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!searchQuery.trim()) {
-        setSearchResults([]);
-        setShowPopover(false);
-        return;
-      }
-      setSearchLoading(true);
-      setShowPopover(true);
-      try {
-        const res = await fetch(
-          `/api/users?query=${encodeURIComponent(searchQuery)}`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.users || []);
-        } else {
-          setSearchResults([]);
-        }
-      } catch {
-        setSearchResults([]);
-      }
-      setSearchLoading(false);
-    };
-    const timeout = setTimeout(fetchUsers, 300); // debounce
-    return () => clearTimeout(timeout);
-  }, [searchQuery]);
-
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-20 bg-background shadow">
         <nav className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center">
-            <Link href="/home" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">ThinkSync</span>
-            </Link>
-          </div>
-
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <Popover
-              open={
-                showPopover &&
-                (searchResults.length > 0 || searchLoading || !!searchQuery)
-              }
-              onOpenChange={setShowPopover}
-            >
-              <PopoverTrigger asChild>
-                <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => searchQuery && setShowPopover(true)}
-                    className="pl-10 w-full"
-                  />
+          <AnimatePresence mode="wait">
+            {isSearchMode ? (
+              // Search Mode View
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="flex items-center w-full space-x-2"
+                key="search-mode"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSearchMode(false)}
+                  className="shrink-0"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex-1">
+                  <SearchBar />
                 </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0 mt-2">
-                {searchLoading ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    Searching...
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  <ul>
-                    {searchResults.map((user) => (
-                      <li
-                        key={user._id}
-                        className="px-4 py-2 hover:bg-accent cursor-pointer flex flex-col"
-                      >
-                        <span className="font-medium">{user.fullname}</span>
-                        <span className="text-xs text-muted-foreground">
-                          @{user.username}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : searchQuery ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    No users found.
-                  </div>
-                ) : null}
-              </PopoverContent>
-            </Popover>
-          </div>
+              </motion.div>
+            ) : (
+              // Normal Mode View
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex items-center w-full justify-between"
+                key="normal-mode"
+              >
+                <div className="flex items-center">
+                  <Link href="/home" className="flex items-center space-x-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                      <BookOpen className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <span className="text-xl font-bold">ThinkSync</span>
+                  </Link>
+                </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Create Post Button */}
-            <Button size="sm" className="hidden md:flex">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Post
-            </Button>
+                {/* Search Bar for md and up */}
+                <div className="hidden md:flex flex-1 max-w-2xl mx-8">
+                  <SearchBar />
+                </div>
 
-            {/* Mobile Search Icon */}
-            <Button variant="ghost" size="sm" className="md:hidden">
-              <Search className="h-5 w-5" />
-            </Button>
+                <div className="flex items-center space-x-4">
+                  {/* Create Post Button */}
+                  <Button size="sm" className="hidden md:flex">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Post
+                  </Button>
 
-            {/* Desktop Notification Bell */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="relative hidden md:flex"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </Button>
-
-            {/* User Avatar Dropdown */}
-            {!loading && user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                  {/* Mobile Search Icon */}
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
+                    size="sm"
+                    className="md:hidden"
+                    onClick={() => setIsSearchMode(true)}
                   >
-                    <Avatar className="h-8 w-8 overflow-hidden">
-                      <AvatarImage
-                        src={
-                          user.avatar || "/placeholder.svg?height=128&width=128"
-                        }
-                        alt={user.fullname}
-                        style={{
-                          objectFit: "cover",
-                          width: "100%",
-                          height: "100%",
-                        }}
-                      />
-                      <AvatarFallback>
-                        {getAvatarInitials(user.fullname)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <Search className="h-5 w-5" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {user.fullname}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <Link href="/profile">
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
 
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+                  {/* Notification Bell */}
+                  <Button variant="ghost" size="sm" className="relative">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Button>
+
+                  {/* User Avatar Dropdown */}
+                  {!loading && user && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="relative h-8 w-8 rounded-full"
+                        >
+                          <Avatar className="h-8 w-8 overflow-hidden">
+                            <AvatarImage
+                              src={
+                                user.avatar ||
+                                "/placeholder.svg?height=128&width=128"
+                              }
+                              alt={user.fullname}
+                              style={{
+                                objectFit: "cover",
+                                width: "100%",
+                                height: "100%",
+                              }}
+                            />
+                            <AvatarFallback>
+                              {getAvatarInitials(user.fullname)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-56"
+                        align="end"
+                        forceMount
+                      >
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">
+                              {user.fullname}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {user.email}
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <Link href="/profile">
+                          <DropdownMenuItem>
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Settings</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={signOut}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Sign out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+
+                  {/* Mobile menu button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="md:hidden"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  >
+                    {mobileMenuOpen ? (
+                      <X className="h-5 w-5" />
+                    ) : (
+                      <Menu className="h-5 w-5" />
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </nav>
       </header>
 

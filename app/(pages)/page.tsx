@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SessionRedirect } from "@/components/SessionRedirect";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -145,6 +146,7 @@ const pricingPlans = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      <SessionRedirect />
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 sm:py-32">
         {/* Background Video */}
@@ -162,7 +164,7 @@ export default function LandingPage() {
           {/* Overlay for better text readability */}
           <div className="absolute inset-0 bg-black/40" />
         </div>
-        
+
         <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
           <motion.div
             className="mx-auto max-w-4xl text-center"

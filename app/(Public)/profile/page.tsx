@@ -80,7 +80,12 @@ export default function Page() {
             <div className="relative">
               <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
                 <AvatarImage
-                  src={user.avatar || "/placeholder.svg?height=128&width=128"}
+                  src={
+                    user.avatar ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user.fullname || "User"
+                    )}&size=128`
+                  }
                   alt="Profile"
                   style={{
                     objectFit: "cover",
@@ -189,7 +194,12 @@ export default function Page() {
                           <div className="flex items-center gap-3">
                             <Avatar className="w-10 h-10">
                               <AvatarImage
-                                src={f.avatar || "/placeholder.svg"}
+                                src={
+                                  f.avatar ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    f.fullname || f.username || "User"
+                                  )}&size=40`
+                                }
                                 alt={f.fullname || f.username || "User"}
                               />
                               <AvatarFallback>
@@ -265,7 +275,12 @@ export default function Page() {
                           <div className="flex items-center gap-3">
                             <Avatar className="w-10 h-10">
                               <AvatarImage
-                                src={f.avatar || "/placeholder.svg"}
+                                src={
+                                  f.avatar ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    f.fullname || f.username || "User"
+                                  )}&size=40`
+                                }
                                 alt={f.fullname || f.username || "User"}
                               />
                               <AvatarFallback>
@@ -334,7 +349,9 @@ export default function Page() {
                 <div className="flex gap-3">
                   <Avatar className="w-10 h-10">
                     <AvatarImage
-                      src="/placeholder.svg?height=40&width=40"
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        "CHRISTJIL"
+                      )}&size=40`}
                       alt="CHRISTJIL"
                     />
                     <AvatarFallback>CJ</AvatarFallback>

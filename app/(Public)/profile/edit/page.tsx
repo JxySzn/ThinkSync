@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, MapPin, Link, Calendar } from "lucide-react";
+import { ArrowLeft, Camera, MapPin, Link, Calendar, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/useSession";
 import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
@@ -48,7 +48,10 @@ export default function Page() {
             avatar: data.user.avatar || "",
           });
           setAvatarPreview(
-            data.user.avatar || "/placeholder.svg?height=128&width=128"
+            data.user.avatar ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                data.user.fullname || "User"
+              )}&size=128`
           );
         }
       } finally {
@@ -70,12 +73,28 @@ export default function Page() {
   ) => {
     const file = event.target.files?.[0];
     if (file) {
-      setAvatarPreview(URL.createObjectURL(file));
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+
+      setLoading(true);
       try {
         const url = await uploadToCloudinary(file, "avatars");
+        if (!url) throw new Error("No URL returned from Cloudinary");
         setFormData((prev) => ({ ...prev, avatar: url }));
-      } catch {
-        alert("Failed to upload avatar");
+      } catch (error) {
+        console.error("Avatar upload error:", error);
+        setAvatarPreview(
+          formData.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              formData.fullname || "User"
+            )}&size=128`
+        );
+        alert("Failed to upload avatar. Please try again.");
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -83,6 +102,7 @@ export default function Page() {
   const handleSave = async () => {
     setLoading(true);
     try {
+      console.log("Saving user data:", formData); // Debug log
       const res = await fetch("/api/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -96,12 +116,16 @@ export default function Page() {
           avatar: formData.avatar,
         }),
       });
+      const data = await res.json();
+      console.log("Save response:", data); // Debug log
       if (res.ok) {
         if (refetch) {
           refetch();
         }
         router.push("/profile");
       }
+    } catch (error) {
+      console.error("Save error:", error); // Debug log
     } finally {
       setLoading(false);
     }
@@ -151,16 +175,21 @@ export default function Page() {
       <div className="px-4 flex justify-center mt-8 mb-8">
         <div className="relative inline-block">
           <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
-            <AvatarImage
-              src={avatarPreview || "/placeholder.svg"}
-              alt="Profile"
-              style={{
-                objectFit: "cover",
-                width: "100%",
-                height: "100%",
-              }}
-            />
-            <AvatarFallback className="text-2xl">JS</AvatarFallback>
+            {avatarPreview ? (
+              <AvatarImage
+                src={avatarPreview}
+                alt="Profile"
+                style={{
+                  objectFit: "cover",
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
+            ) : (
+              <AvatarFallback className="bg-muted">
+                <User className="w-16 h-16 text-muted-foreground" />
+              </AvatarFallback>
+            )}
           </Avatar>
           <label
             htmlFor="avatar-upload"

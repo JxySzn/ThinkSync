@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Menu, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { name: "Features", href: "#features" },
@@ -44,7 +43,6 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center space-x-4 pr-4 sm:pr-6 lg:pr-8">
-            <ThemeToggle />
             <div className="hidden md:flex md:items-center md:space-x-4">
               <Button variant="ghost" size="sm">
                 <Link href="/sign_in">Sign In</Link>
@@ -137,9 +135,7 @@ export default function Navbar() {
                 </div>
 
                 {/* Footer with Theme Toggle */}
-                <div className="p-4 border-t">
-                  <ThemeToggle />
-                </div>
+                <div className="p-4 border-t"></div>
               </div>
             </motion.div>
           </>

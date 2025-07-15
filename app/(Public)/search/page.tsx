@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import Link from "next/link";
 
 interface User {
   _id: string;
@@ -69,7 +68,11 @@ function SearchContent() {
           ) : users.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {users.map((user) => (
-                <Link href={`/profile/${user.username}`} key={user._id}>
+                <a
+                  key={user._id}
+                  href={`/profile/${user.username}`}
+                  style={{ textDecoration: "none" }}
+                >
                   <Card className="p-4 hover:bg-accent transition-colors cursor-pointer">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12">
@@ -95,7 +98,7 @@ function SearchContent() {
                       </div>
                     </div>
                   </Card>
-                </Link>
+                </a>
               ))}
             </div>
           ) : (

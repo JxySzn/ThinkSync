@@ -145,10 +145,10 @@ const pricingPlans = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col items-center overflow-x-hidden">
       <SessionRedirect />
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 sm:py-32">
+      <section className="relative overflow-hidden py-12 sm:py-20 md:py-32 w-full flex justify-center">
         {/* Background Video */}
         <div className="absolute inset-0 z-0">
           <video
@@ -165,9 +165,9 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-black/40" />
         </div>
 
-        <div className="container relative z-10 px-4 sm:px-6 lg:px-8">
+        <div className="container relative z-10 px-2 sm:px-4 md:px-6 lg:px-8 flex flex-col items-center w-full max-w-full">
           <motion.div
-            className="mx-auto max-w-4xl text-center"
+            className="mx-auto w-full max-w-4xl text-center"
             initial="initial"
             animate="animate"
             variants={staggerContainer}
@@ -179,7 +179,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.h1
-              className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl"
+              className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight"
               variants={fadeInUp}
             >
               Collaborate. Research.{" "}
@@ -189,7 +189,7 @@ export default function LandingPage() {
             </motion.h1>
 
             <motion.p
-              className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl"
+              className="mx-auto mt-4 sm:mt-6 max-w-full sm:max-w-2xl text-base sm:text-lg leading-7 sm:leading-8 text-muted-foreground"
               variants={fadeInUp}
             >
               The digital workspace where students and researchers form groups,
@@ -198,31 +198,27 @@ export default function LandingPage() {
             </motion.p>
 
             <motion.div
-              className="mt-10 flex items-center justify-center gap-4"
+              className="mt-8 sm:mt-10 flex items-center justify-center gap-4"
               variants={fadeInUp}
             >
-              <Button size="lg" className="h-12 px-8">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
               <Button
-                variant="outline"
                 size="lg"
-                className="h-12 px-8 bg-transparent"
+                className="h-12 px-8 bg-primary hover:cursor-pointer text-foreground"
               >
-                Watch Demo
+                Get Started
               </Button>
             </motion.div>
 
-            <motion.div className="mt-16" variants={fadeInUp}>
-              <div className="relative mx-auto max-w-5xl">
+            <motion.div className="mt-12 sm:mt-16" variants={fadeInUp}>
+              <div className="relative mx-auto w-full max-w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl" />
                 <Image
                   src="/placeholder.svg?height=600&width=1000"
                   alt="Research collaboration platform dashboard"
                   width={1000}
                   height={600}
-                  className="relative rounded-xl border bg-background/50 shadow-2xl"
+                  className="relative w-full h-auto rounded-xl border bg-background/50 shadow-2xl max-w-full"
+                  priority
                 />
               </div>
             </motion.div>
@@ -231,8 +227,8 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 sm:py-32">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-20 sm:py-32 w-full flex justify-center">
+        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="mx-auto max-w-2xl text-center"
             initial="initial"
@@ -278,8 +274,8 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="border-y bg-muted/50 py-20">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="border-y bg-muted/50 py-20 w-full flex justify-center">
+        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="grid grid-cols-2 gap-8 md:grid-cols-4"
             initial="initial"
@@ -311,8 +307,8 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 sm:py-32">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-20 sm:py-32 w-full flex justify-center">
+        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="mx-auto max-w-2xl text-center"
             initial="initial"
@@ -370,8 +366,8 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 sm:py-32">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-20 sm:py-32 w-full flex justify-center">
+        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="mx-auto max-w-2xl text-center"
             initial="initial"
@@ -449,8 +445,8 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-primary py-20 text-primary-foreground">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="bg-primary py-20 text-primary-foreground w-full flex justify-center">
+        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="mx-auto max-w-2xl text-center"
             initial="initial"

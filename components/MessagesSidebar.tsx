@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "./useSession";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface User {
   _id: string;
@@ -30,7 +32,7 @@ export function MessagesSidebar() {
   }, [sessionLoading, currentUser]);
 
   return (
-    <aside className="w-96 pl-10 h-screen overflow-y-auto border-r border-muted bg-background flex flex-col">
+    <aside className="w-[470px] pl-10 h-screen overflow-y-auto border-r border-muted bg-background flex flex-col">
       <div className="p-4 text-lg font-semibold border-b border-muted">
         Chats
       </div>
@@ -47,24 +49,38 @@ export function MessagesSidebar() {
           {users.map((user) => (
             <li
               key={user._id}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                selectedUserId === user._id ? "bg-muted" : "hover:bg-muted/60"
-              }`}
+              className="px-2 py-2 cursor-pointer"
               onClick={() => setSelectedUserId(user._id)}
             >
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-primary-foreground">
-                {user.fullname.charAt(0).toUpperCase()}
-              </div>
-              {/* User Info */}
-              <div className="flex flex-col min-w-0">
-                <span className="font-medium text-foreground truncate">
-                  {user.fullname}
-                </span>
-                <span className="text-sm text-muted-foreground truncate">
-                  @{user.username || user.email}
-                </span>
-              </div>
+              <Card
+                className={`flex items-center gap-3 p-3 transition-colors ${
+                  selectedUserId === user._id ? "bg-muted" : "hover:bg-muted/60"
+                }`}
+              >
+                {/* Avatar */}
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-primary-foreground overflow-hidden">
+                  {user.fullname.charAt(0).toUpperCase()}
+                </div>
+                {/* User Info and Preview */}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="font-medium text-foreground truncate">
+                    {user.fullname}
+                  </span>
+                  <span className="text-sm text-muted-foreground truncate">
+                    @{user.username || user.email}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate mt-1">
+                    Last message preview...
+                  </span>
+                </div>
+                {/* Time and Unread Badge */}
+                <div className="flex flex-col items-end gap-1 min-w-[48px]">
+                  <span className="text-xs text-muted-foreground">03:58</span>
+                  <Badge className="rounded-full px-2 py-0.5 bg-primary text-primary-foreground">
+                    1
+                  </Badge>
+                </div>
+              </Card>
             </li>
           ))}
         </ul>

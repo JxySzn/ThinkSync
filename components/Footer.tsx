@@ -1,32 +1,8 @@
-import Link from "next/link";
-import { BookOpen, Twitter, Github, Linkedin } from "lucide-react";
+"use client";
 
-const footerNavigation = {
-  product: [
-    { name: "Features", href: "#" },
-    { name: "Pricing", href: "#" },
-    { name: "API", href: "#" },
-    { name: "Integrations", href: "#" },
-  ],
-  support: [
-    { name: "Documentation", href: "#" },
-    { name: "Help Center", href: "#" },
-    { name: "Community", href: "#" },
-    { name: "Contact", href: "#" },
-  ],
-  company: [
-    { name: "About", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Careers", href: "#" },
-    { name: "Press", href: "#" },
-  ],
-  legal: [
-    { name: "Privacy", href: "#" },
-    { name: "Terms", href: "#" },
-    { name: "Security", href: "#" },
-    { name: "Cookies", href: "#" },
-  ],
-};
+import Link from "next/link";
+import { BookOpen, Twitter, Github, Linkedin, ArrowUp } from "lucide-react";
+import { motion } from "framer-motion";
 
 const socialLinks = [
   { name: "Twitter", href: "#", icon: Twitter },
@@ -37,20 +13,22 @@ const socialLinks = [
 export function Footer() {
   return (
     <footer className="border-t bg-background">
-      <div className="container px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 lg:grid-cols-6">
-          <div className="col-span-2">
+      <div className="container flex flex-col px-4 py-12 sm:px-6 lg:px-8">
+        <div className="flex w-full flex-col md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center space-x-2 md:justify-start md:w-auto w-full mb-6 md:mb-0">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <BookOpen className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold">ThinkSync</span>
             </Link>
-            <p className="mt-4 text-sm text-muted-foreground">
+          </div>
+          <div className="flex flex-col items-end md:items-end md:w-auto w-full">
+            <p className="text-sm text-muted-foreground text-right">
               Empowering researchers worldwide to collaborate, discover, and
               innovate together.
             </p>
-            <div className="mt-6 flex space-x-4">
+            <div className="mt-6 flex space-x-4 justify-end">
               {socialLinks.map((item) => (
                 <Link
                   key={item.name}
@@ -63,76 +41,33 @@ export function Footer() {
               ))}
             </div>
           </div>
-
-          <div>
-            <h3 className="text-sm font-semibold">Product</h3>
-            <ul className="mt-4 space-y-3">
-              {footerNavigation.product.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold">Support</h3>
-            <ul className="mt-4 space-y-3">
-              {footerNavigation.support.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold">Company</h3>
-            <ul className="mt-4 space-y-3">
-              {footerNavigation.company.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold">Legal</h3>
-            <ul className="mt-4 space-y-3">
-              {footerNavigation.legal.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+        </div>
+        <div className="mt-12 w-full flex justify-center">
+          <div className="w-full" style={{ maxWidth: "1200px" }}>
+            <div className="border-t border-muted w-full" />
           </div>
         </div>
-
-        <div className="mt-12 border-t pt-8">
-          <p className="text-sm text-muted-foreground">
+        <div
+          className="pt-8 w-full flex justify-between items-center"
+          style={{ maxWidth: "1200px", margin: "0 auto" }}
+        >
+          <p className="text-sm text-muted-foreground text-left">
             &copy; {new Date().getFullYear()} ResearchHub. All rights reserved.
           </p>
+          <motion.button
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground focus:outline-none"
+            aria-label="Back to top"
+          >
+            Back to top
+            <ArrowUp className="h-4 w-4" />
+          </motion.button>
         </div>
       </div>
     </footer>

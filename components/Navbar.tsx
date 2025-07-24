@@ -5,16 +5,40 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Menu, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter, usePathname } from "next/navigation";
+
+const scrollToSection = (sectionId: string) => {
+  const element = document.getElementById(sectionId.slice(1));
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth" });
+  }
+};
 
 const navigation = [
   { name: "Features", href: "#features" },
-  { name: "Pricing", href: "#pricing" },
   { name: "About", href: "#about" },
+  { name: "FAQ", href: "#faq" },
+  { name: "Testimonials", href: "#Testimonials" },
   { name: "Contact", href: "#contact" },
 ];
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    e.preventDefault();
+    if (pathname === "/") {
+      scrollToSection(href);
+    } else {
+      router.push(`/${href}`);
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -36,6 +60,7 @@ export default function Navbar() {
                 key={item.name}
                 href={item.href}
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onClick={(e) => handleNavClick(e, item.href)}
               >
                 {item.name}
               </Link>
@@ -112,7 +137,7 @@ export default function Navbar() {
                         key={item.name}
                         href={item.href}
                         className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
+                        onClick={(e) => handleNavClick(e, item.href)}
                       >
                         {item.name}
                       </Link>

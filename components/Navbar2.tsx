@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -28,31 +28,21 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSession } from "./useSession";
 import SearchBar from "./SearchBar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 export default function Navbar2() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const { user, loading, signOut } = useSession();
-
-  // Fetch notifications
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!user) return;
-
-      try {
-        const response = await fetch("/api/notifications");
-        if (response.ok) {
-          const data = await response.json();
-          setUnreadCount(data.unreadCount);
-        }
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
-
-    fetchNotifications();
-  }, [user]);
+  const router = useRouter();
+  const [showDialog, setShowDialog] = useState(false);
 
   // Generate avatar initials from user's name
   const getAvatarInitials = (name: string) => {
@@ -115,7 +105,14 @@ export default function Navbar2() {
 
                 <div className="flex items-center space-x-4 pr-4 sm:pr-6 lg:pr-8">
                   {/* Create Post Button */}
-                  <Button size="sm" className="hidden md:flex">
+                  <Button
+                    size="sm"
+                    className="hidden md:flex"
+                    onClick={() => {
+                      if (!user && !loading) setShowDialog(true);
+                      else router.push("/create");
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Create Post
                   </Button>
@@ -133,11 +130,6 @@ export default function Navbar2() {
                   {/* Notification Bell */}
                   <Button variant="ghost" size="sm" className="relative">
                     <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
                   </Button>
 
                   {/* User Avatar Dropdown */}
@@ -263,13 +255,14 @@ export default function Navbar2() {
                     <Button variant="ghost" className="w-full justify-start">
                       <Bell className="mr-3 h-4 w-4" />
                       Notifications
-                      {unreadCount > 0 && (
-                        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                          {unreadCount}
-                        </span>
-                      )}
                     </Button>
-                    <Button className="w-full justify-start">
+                    <Button
+                      className="w-full justify-start"
+                      onClick={() => {
+                        if (!user && !loading) setShowDialog(true);
+                        else router.push("/create");
+                      }}
+                    >
                       <Plus className="mr-3 h-4 w-4" />
                       Create Post
                     </Button>
@@ -301,6 +294,22 @@ export default function Navbar2() {
           </>
         )}
       </AnimatePresence>
+
+      {/* AlertDialog for auth required */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign up or log in required</DialogTitle>
+          </DialogHeader>
+          <p className="mb-4">You must be signed in to create a blog post.</p>
+          <DialogFooter>
+            <Button onClick={() => router.push("/sign_in")}>Sign In</Button>
+            <Button variant="secondary" onClick={() => router.push("/sign_up")}>
+              Sign Up
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

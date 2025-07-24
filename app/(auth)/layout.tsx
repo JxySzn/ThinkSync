@@ -20,10 +20,11 @@ export default function AuthLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-        >
+        />
+        <div>
           {children}
           <Toaster />
-        </ThemeProvider>
+        </div>
       </body>
     </html>
   );

@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Twitter, Github, Linkedin, ArrowUp } from "lucide-react";
+import { BookOpen, Twitter, Github, Instagram, ArrowUp } from "lucide-react";
 import { motion } from "framer-motion";
 
 const socialLinks = [
-  { name: "Twitter", href: "#", icon: Twitter },
-  { name: "GitHub", href: "#", icon: Github },
-  { name: "LinkedIn", href: "#", icon: Linkedin },
+  { name: "Twitter", href: "https://x.com/synergy_jxyy", icon: Twitter },
+  { name: "GitHub", href: "https://github.com/Jxy-Szn", icon: Github },
+  {
+    name: "Instagram",
+    href: "https://www.instagram.com/jxy_szn_offical",
+    icon: Instagram,
+  },
 ];
 
 export function Footer() {
@@ -52,7 +56,7 @@ export function Footer() {
           style={{ maxWidth: "1200px", margin: "0 auto" }}
         >
           <p className="text-sm text-muted-foreground text-left">
-            &copy; {new Date().getFullYear()} ResearchHub. All rights reserved.
+            &copy; {new Date().getFullYear()} ThinkSync. All rights reserved.
           </p>
           <motion.button
             whileHover={{ y: -4 }}

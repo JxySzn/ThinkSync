@@ -1,35 +1,112 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useUserStore } from "@/components/useUserStore";
-import { Avatar } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 
-export default function UserProfilePage() {
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, Calendar, MessageCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/components/useSession";
+import BlogPostCard from "@/components/BlogPostCard";
+import { toast } from "sonner";
+
+interface User {
+  _id?: string;
+  id?: string;
+  fullname?: string;
+  username?: string;
+  avatar?: string;
+  location?: string;
+  joinDate?: string;
+  online?: boolean;
+  followers?: User[];
+  following?: User[];
+}
+
+interface BlogPost {
+  _id: string;
+  title: string;
+  content: string;
+  author: User;
+  tags: string[];
+  coverImage?: string;
+  createdAt: string;
+  updatedAt: string;
+  likes?: string[];
+  isDraft?: boolean;
+  commentCount?: number;
+  shareCount?: number;
+}
+
+// Skeleton component for profile header
+function ProfileHeaderSkeleton() {
+  return (
+    <div className="px-4 pb-4">
+      <div className="flex justify-between items-start mt-8 mb-4">
+        <div className="relative">
+          <Skeleton className="w-32 h-32 rounded-full" />
+        </div>
+        <Skeleton className="w-24 h-10 rounded" />
+      </div>
+      <div className="mb-3">
+        <Skeleton className="h-6 w-48 mb-2" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className="flex gap-4 mb-3">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+      <div className="flex gap-4 mb-4">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+    </div>
+  );
+}
+
+// Skeleton component for blog post cards
+function BlogPostSkeleton() {
+  return (
+    <Card className="w-full bg-card text-card-foreground border-border rounded-lg overflow-hidden">
+      <div className="p-0">
+        <Skeleton className="w-full aspect-[2/1]" />
+      </div>
+      <div className="p-6 space-y-4">
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export default function UsernameProfilePage() {
   const params = useParams();
-  const username = params?.username as string;
-  type UserType = {
-    _id?: string;
-    username: string;
-    fullname?: string;
-    avatar?: string;
-    online?: boolean;
-    location?: string;
-    joinDate?: string;
-    followers?: Array<UserType | string>;
-    following?: Array<UserType | string>;
-  };
-  const [user, setUser] = useState<UserType | null>(null);
+  const username = params.username as string;
+  const [activeTab, setActiveTab] = useState("posts");
+  const [followersSearch, setFollowersSearch] = useState("");
+  const [followingSearch, setFollowingSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const {
-    user: currentUser,
-    setUser: setCurrentUser,
-    updateFollowing,
-  } = useUserStore();
+  const [user, setUser] = useState<User | null>(null);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const { user: currentUser } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -43,99 +120,145 @@ export default function UserProfilePage() {
           // Check if current user is following this user
           if (currentUser && data.user.followers) {
             setIsFollowing(
-              (data.user.followers as Array<UserType | string>).some(
-                (f) =>
-                  (typeof f === "object" &&
-                    f.username === currentUser.username) ||
-                  f === currentUser.username ||
-                  (typeof f === "object" && f._id === currentUser._id) ||
-                  f === currentUser._id
-              )
+              data.user.followers.some((f: User) => f._id === currentUser._id)
             );
           }
-        } else {
-          setUser(null);
         }
       } finally {
         setLoading(false);
       }
     }
-    if (username) fetchUser();
+    fetchUser();
   }, [username, currentUser]);
 
-  // Fetch current user if not already
   useEffect(() => {
-    async function fetchCurrentUser() {
-      if (!currentUser) {
-        const res = await fetch("/api/users");
+    async function fetchPosts() {
+      if (!user?.username) return;
+      try {
+        const res = await fetch(
+          `/api/blog?author=${encodeURIComponent(user.username)}`
+        );
         const data = await res.json();
-        if (res.ok && data.user) setCurrentUser(data.user);
+        if (res.ok && data.posts) {
+          setPosts(data.posts);
+        }
+      } catch (error) {
+        console.error("Error fetching posts:", error);
       }
     }
-    fetchCurrentUser();
-  }, [currentUser, setCurrentUser]);
+    fetchPosts();
+  }, [user]);
 
-  if (loading || !user) {
+  const handleFollowToggle = async () => {
+    if (!currentUser || !user) return;
+
+    try {
+      const res = await fetch("/api/users/follow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          targetUserId: user._id,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setIsFollowing(data.following);
+        toast(data.following ? "Followed" : "Unfollowed", {
+          description: `You have ${
+            data.following ? "followed" : "unfollowed"
+          } @${user.username}`,
+          icon: user.avatar ? (
+            <Image
+              src={user.avatar}
+              alt={user.username || ""}
+              width={24}
+              height={24}
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs text-white">
+              {(user.fullname || "U")[0]}
+            </div>
+          ),
+        });
+        // Update followers count immediately in the UI
+        setUser((prev) => {
+          if (!prev) return null;
+          const followersUpdate = data.following
+            ? [
+                ...(prev.followers || []),
+                {
+                  _id: currentUser._id,
+                  fullname: currentUser.fullname,
+                  username: currentUser.username,
+                  avatar: currentUser.avatar,
+                  location: currentUser.location,
+                  online: currentUser.online,
+                } as User,
+              ]
+            : (prev.followers || []).filter((f) => f._id !== currentUser._id);
+
+          return {
+            ...prev,
+            followers: followersUpdate,
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Failed to follow/unfollow:", error);
+    }
+  };
+
+  // Check if current user is viewing their own profile
+  const isOwnProfile = currentUser?.username === user?.username;
+
+  if (loading) {
     return (
-      <div className="p-8 text-center text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="relative">
+          <ProfileHeaderSkeleton />
+        </div>
+        <Tabs value="posts" className="w-full">
+          <div className="border-b border-border">
+            <TabsList className="w-full h-auto p-0 bg-transparent">
+              <div className="flex w-full">
+                <TabsTrigger
+                  value="posts"
+                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary hover:bg-muted/50 py-4"
+                >
+                  Posts
+                </TabsTrigger>
+              </div>
+            </TabsList>
+          </div>
+          <TabsContent value="posts" className="mt-0">
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <BlogPostSkeleton key={index} />
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        User not found
+      </div>
     );
   }
 
   // Followers and following are arrays of user objects or IDs
+  const followers = user.followers || [];
   const following = user.following || [];
-
-  const handleFollow = async () => {
-    if (!currentUser) return;
-    setIsFollowing(true);
-    setUser((prev) =>
-      prev
-        ? {
-            ...prev,
-            followers: [
-              ...(prev.followers || []),
-              {
-                _id: currentUser._id,
-                username: currentUser.username,
-                fullname: currentUser.fullname,
-                avatar: currentUser.avatar,
-                online: currentUser.online,
-                location: currentUser.location,
-                joinDate: currentUser.joinDate,
-              } as UserType,
-            ],
-          }
-        : prev
-    );
-    updateFollowing(username, true);
-    await fetch(`/api/users/${encodeURIComponent(username)}/follow`, {
-      method: "POST",
-    });
-  };
-
-  const handleUnfollow = async () => {
-    if (!currentUser) return;
-    setIsFollowing(false);
-    setUser((prev) =>
-      prev
-        ? {
-            ...prev,
-            followers: (prev.followers || []).filter(
-              (f) =>
-                typeof f === "object" &&
-                f.username !== currentUser.username &&
-                (typeof f === "string" ? f !== currentUser.username : true) &&
-                typeof f === "object" &&
-                f._id !== currentUser._id &&
-                (typeof f === "string" ? f !== currentUser._id : true)
-            ),
-          }
-        : prev
-    );
-    updateFollowing(username, false);
-    await fetch(`/api/users/${encodeURIComponent(username)}/follow`, {
-      method: "DELETE",
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -143,10 +266,10 @@ export default function UserProfilePage() {
       <div className="relative">
         {/* Profile Info */}
         <div className="px-4 pb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start mt-8 mb-4 gap-4">
+          <div className="flex justify-between items-start mt-8 mb-4">
             <div className="relative">
               <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
-                <Image
+                <AvatarImage
                   src={
                     user.avatar ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -154,19 +277,16 @@ export default function UserProfilePage() {
                     )}&size=128`
                   }
                   alt="Profile"
-                  fill
-                  style={{ objectFit: "cover" }}
-                  sizes="128px"
-                  priority
+                  className="object-cover w-full h-full"
                 />
-                <span className="text-2xl absolute inset-0 flex items-center justify-center">
+                <AvatarFallback className="text-2xl">
                   {user.fullname
                     ? user.fullname
                         .split(" ")
                         .map((n: string) => n[0])
                         .join("")
                     : "U"}
-                </span>
+                </AvatarFallback>
               </Avatar>
               {/* Online indicator */}
               {user.online && (
@@ -174,21 +294,27 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            {/* Buttons for large screens */}
-            <div className="hidden sm:flex gap-2 mt-16">
-              <button
-                className={`bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90`}
-                onClick={isFollowing ? handleUnfollow : handleFollow}
-              >
-                {isFollowing ? "Following" : "Follow"}
-              </button>
-              <Button
-                variant="secondary"
-                onClick={() => router.push(`/messages?user=${user.username}`)}
-              >
-                Message
+            {isOwnProfile ? (
+              <Button variant="outline" className="mt-16 bg-transparent">
+                <Link href="/profile/edit">Edit profile</Link>
               </Button>
-            </div>
+            ) : (
+              <div className="flex gap-2 mt-16">
+                <Button
+                  variant={isFollowing ? "outline" : "default"}
+                  onClick={handleFollowToggle}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/messages?user=${user.username}`)}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Message
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Name and Username */}
@@ -203,11 +329,13 @@ export default function UserProfilePage() {
           <div className="flex items-center gap-4 text-muted-foreground text-sm mb-3">
             {user.location && (
               <div className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
                 <span>{user.location}</span>
               </div>
             )}
             {user.joinDate && (
               <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
                 <span>
                   Joined{" "}
                   {new Date(user.joinDate).toLocaleString("default", {
@@ -220,101 +348,237 @@ export default function UserProfilePage() {
           </div>
 
           {/* Following/Followers */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm mb-4 items-start sm:items-center">
-            <div className="flex gap-2">
-              <span className="font-bold text-foreground">
-                {following.length}
-              </span>
-              <span className="text-muted-foreground">Following</span>
-              <span className="font-bold text-foreground">
-                {user.followers?.length || 0}
-              </span>
-              <span className="text-muted-foreground">Followers</span>
-            </div>
-            {/* Buttons for small screens */}
-            <div className="flex gap-2 w-full sm:hidden">
-              <button
-                className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
-                onClick={isFollowing ? handleUnfollow : handleFollow}
-              >
-                {isFollowing ? "Following" : "Follow"}
-              </button>
-              <button className="flex-1 bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/90">
-                Message
-              </button>
-            </div>
+          <div className="flex gap-4 text-sm mb-4">
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1 hover:underline">
+                  <span className="font-bold text-foreground">
+                    {following.length}
+                  </span>
+                  <span className="text-muted-foreground">Following</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Following</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Search following..."
+                      value={followingSearch}
+                      onChange={(e) => setFollowingSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                    {following.length === 0 && (
+                      <div className="text-center text-muted-foreground">
+                        No following yet
+                      </div>
+                    )}
+                    {following
+                      .filter((f: User) =>
+                        typeof f === "object"
+                          ? f.fullname
+                              ?.toLowerCase()
+                              .includes(followingSearch.toLowerCase()) ||
+                            f.username
+                              ?.toLowerCase()
+                              .includes(followingSearch.toLowerCase())
+                          : true
+                      )
+                      .map((f: User, i: number) => (
+                        <div
+                          key={f._id || f.id || i}
+                          className="flex items-center justify-between p-2 hover:bg-muted rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage
+                                src={
+                                  f.avatar ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    f.fullname || f.username || "User"
+                                  )}&size=40`
+                                }
+                                alt={f.fullname || f.username || "User"}
+                              />
+                              <AvatarFallback>
+                                {(f.fullname || f.username || "U").charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <p className="font-semibold text-sm">
+                                  {f.fullname || f.username || "User"}
+                                </p>
+                              </div>
+                              <p className="text-muted-foreground text-xs">
+                                @{f.username || "user"}
+                              </p>
+                            </div>
+                          </div>
+                          <Link href={`/profile/${f.username}`}>
+                            <Button variant="outline" size="sm">
+                              {currentUser?._id === f._id
+                                ? "You"
+                                : "View Profile"}
+                            </Button>
+                          </Link>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1 hover:underline">
+                  <span className="font-bold text-foreground">
+                    {followers.length}
+                  </span>
+                  <span className="text-muted-foreground">Followers</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Followers</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Search followers..."
+                      value={followersSearch}
+                      onChange={(e) => setFollowersSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                    {followers.length === 0 && (
+                      <div className="text-center text-muted-foreground">
+                        No followers yet
+                      </div>
+                    )}
+                    {followers
+                      .filter((f: User) =>
+                        typeof f === "object"
+                          ? f.fullname
+                              ?.toLowerCase()
+                              .includes(followersSearch.toLowerCase()) ||
+                            f.username
+                              ?.toLowerCase()
+                              .includes(followersSearch.toLowerCase())
+                          : true
+                      )
+                      .map((f: User, i: number) => (
+                        <div
+                          key={f._id || f.id || i}
+                          className="flex items-center justify-between p-2 hover:bg-muted rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage
+                                src={
+                                  f.avatar ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    f.fullname || f.username || "User"
+                                  )}&size=40`
+                                }
+                                alt={f.fullname || f.username || "User"}
+                              />
+                              <AvatarFallback>
+                                {(f.fullname || f.username || "U").charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <p className="font-semibold text-sm">
+                                  {f.fullname || f.username || "User"}
+                                </p>
+                              </div>
+                              <p className="text-muted-foreground text-xs">
+                                @{f.username || "user"}
+                              </p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm">
+                            Follow
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="w-full border-b border-border">
-        <div className="flex w-full">
-          {[
-            { value: "posts", label: "Posts" },
-            { value: "replies", label: "Replies" },
-            { value: "highlights", label: "Highlights" },
-            { value: "articles", label: "Articles" },
-            { value: "media", label: "Media" },
-            { value: "likes", label: "Likes" },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary hover:bg-muted/50 py-4"
-            >
-              {tab.label}
-            </button>
-          ))}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="border-b border-border">
+          <TabsList className="w-full h-auto p-0 bg-transparent">
+            <div className="flex w-full">
+              {[{ value: "posts", label: "Posts" }].map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary hover:bg-muted/50 py-4"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </div>
+          </TabsList>
         </div>
-      </div>
 
-      {/* Example Posts Section */}
-      <div className="divide-y divide-border">
-        <Card className="rounded-none border-0 border-b">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-              <span>You reposted</span>
-            </div>
-            <div className="flex gap-3">
-              <Avatar className="w-10 h-10">
-                <Image
-                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    "CHRISTJIL"
-                  )}&size=40`}
-                  alt="CHRISTJIL"
-                  width={40}
-                  height={40}
-                  style={{ objectFit: "cover" }}
-                  sizes="40px"
-                  priority={false}
-                />
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold">CHRISTJIL</span>
-                  <span className="text-muted-foreground text-sm">
-                    @christjil_gh
-                  </span>
-                  <span className="text-muted-foreground text-sm">·</span>
-                  <span className="text-muted-foreground text-sm">
-                    Apr 23, 2024
-                  </span>
-                </div>
-                <div className="text-sm">
-                  <p className="font-semibold mb-2">
-                    6 reasons why you should trust God:
-                  </p>
-                  <div className="space-y-1">
-                    <p>• He knows you by name.</p>
-                    <p className="text-muted-foreground ml-4">Isaiah 43:1</p>
-                    <p>• He will fight for you.</p>
-                  </div>
-                </div>
+        <TabsContent value="posts" className="mt-0">
+          <div className="p-6">
+            {posts.length === 0 ? (
+              <div className="text-center text-muted-foreground">
+                <p>No posts yet.</p>
+                {isOwnProfile && (
+                  <Button
+                    className="mt-4"
+                    onClick={() => router.push("/create")}
+                  >
+                    Create your first post
+                  </Button>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {posts.map((post) => (
+                  <div
+                    key={post._id}
+                    onClick={() => router.push(`/blog/${post._id}`)}
+                    className="cursor-pointer"
+                  >
+                    <BlogPostCard
+                      post={{
+                        ...post,
+                        author: {
+                          username: post.author?.username || "unknown",
+                          fullname: post.author?.fullname || "Unknown User",
+                          avatar: post.author?.avatar,
+                        },
+                        likes: post.likes || [],
+                        isDraft: post.isDraft || false,
+                        commentCount: post.commentCount || 0,
+                        shareCount: post.shareCount || 0,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

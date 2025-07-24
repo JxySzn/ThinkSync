@@ -1,48 +1,57 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  MapPin,
-  Calendar,
-  Repeat2,
-  MoreHorizontal,
-  RefreshCw,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, Calendar, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import BlogPostCard from "@/components/BlogPostCard";
 
 interface User {
-  _id?: string;
-  id?: string;
-  fullname?: string;
-  username?: string;
+  _id: string;
+  username: string;
+  fullname: string;
   avatar?: string;
   location?: string;
   joinDate?: string;
-  online?: boolean;
   followers?: User[];
   following?: User[];
 }
 
-export default function Page() {
+interface BlogPost {
+  _id: string;
+  title: string;
+  content: string;
+  author: User;
+  tags: string[];
+  coverImage?: string;
+  createdAt: string;
+  updatedAt: string;
+  likes: string[];
+  isDraft?: boolean;
+  commentCount: number;
+  shareCount: number;
+}
+
+export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("posts");
-  const [followersSearch, setFollowersSearch] = useState("");
-  const [followingSearch, setFollowingSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const router = useRouter();
+
+  // Function to handle starting a chat with the user
+  const handleStartChat = () => {
+    if (!user) return;
+    // Create chat URL with user info
+    const chatUrl = `/messages?user=${user.username}&name=${
+      user.fullname || user.username
+    }&avatar=${user.avatar || ""}`;
+    router.push(chatUrl);
+  };
 
   useEffect(() => {
     async function fetchUser() {
@@ -53,6 +62,8 @@ export default function Page() {
         if (res.ok && data.user) {
           setUser(data.user);
         }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
       } finally {
         setLoading(false);
       }
@@ -60,371 +71,132 @@ export default function Page() {
     fetchUser();
   }, []);
 
-  if (loading || !user) {
+  useEffect(() => {
+    async function fetchPosts() {
+      if (!user?.username) return;
+      try {
+        const res = await fetch(
+          `/api/blog?author=${encodeURIComponent(user.username)}`
+        );
+        const data = await res.json();
+        if (res.ok && data.posts) {
+          setPosts(data.posts);
+        }
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    }
+    fetchPosts();
+  }, [user]);
+
+  if (loading) {
     return (
-      <div className="p-8 text-center text-muted-foreground">Loading...</div>
-    );
-  }
-
-  // Followers and following are arrays of user objects or IDs
-  const followers = user.followers || [];
-  const following = user.following || [];
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header Section */}
-      <div className="relative">
-        {/* Profile Info */}
-        <div className="px-4 pb-4">
-          <div className="flex justify-between items-start mt-8 mb-4">
-            <div className="relative">
-              <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
-                <AvatarImage
-                  src={
-                    user.avatar ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      user.fullname || "User"
-                    )}&size=128`
-                  }
-                  alt="Profile"
-                  style={{
-                    objectFit: "cover",
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
-                <AvatarFallback className="text-2xl">
-                  {user.fullname
-                    ? user.fullname
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                    : "U"}
-                </AvatarFallback>
-              </Avatar>
-              {/* Online indicator */}
-              {user.online && (
-                <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-background"></div>
-              )}
-            </div>
-
-            <Button variant="outline" className="mt-16 bg-transparent">
-              <Link href="/profile/edit">Edit profile</Link>
-            </Button>
-          </div>
-
-          {/* Name and Username */}
-          <div className="mb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold">{user.fullname}</h1>
-            </div>
-            <p className="text-muted-foreground">@{user.username}</p>
-          </div>
-
-          {/* Location and Join Date */}
-          <div className="flex items-center gap-4 text-muted-foreground text-sm mb-3">
-            {user.location && (
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                <span>{user.location}</span>
-              </div>
-            )}
-            {user.joinDate && (
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  Joined{" "}
-                  {new Date(user.joinDate).toLocaleString("default", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Following/Followers */}
-          <div className="flex gap-4 text-sm mb-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="flex items-center gap-1 hover:underline">
-                  <span className="font-bold text-foreground">
-                    {following.length}
-                  </span>
-                  <span className="text-muted-foreground">Following</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Following</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      placeholder="Search following..."
-                      value={followingSearch}
-                      onChange={(e) => setFollowingSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                    {following.length === 0 && (
-                      <div className="text-center text-muted-foreground">
-                        No following yet
-                      </div>
-                    )}
-                    {/* If following is array of user IDs, you may want to fetch user details for each. For now, just show IDs. */}
-                    {following
-                      .filter((f: User) =>
-                        typeof f === "object"
-                          ? f.fullname
-                              ?.toLowerCase()
-                              .includes(followingSearch.toLowerCase()) ||
-                            f.username
-                              ?.toLowerCase()
-                              .includes(followingSearch.toLowerCase())
-                          : true
-                      )
-                      .map((f: User, i: number) => (
-                        <div
-                          key={f._id || f.id || i}
-                          className="flex items-center justify-between p-2 hover:bg-muted rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage
-                                src={
-                                  f.avatar ||
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                    f.fullname || f.username || "User"
-                                  )}&size=40`
-                                }
-                                alt={f.fullname || f.username || "User"}
-                              />
-                              <AvatarFallback>
-                                {(f.fullname || f.username || "U").charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <p className="font-semibold text-sm">
-                                  {f.fullname || f.username || "User"}
-                                </p>
-                              </div>
-                              <p className="text-muted-foreground text-xs">
-                                @{f.username || "user"}
-                              </p>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            Following
-                          </Button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="flex items-center gap-1 hover:underline">
-                  <span className="font-bold text-foreground">
-                    {followers.length}
-                  </span>
-                  <span className="text-muted-foreground">Followers</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Followers</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      placeholder="Search followers..."
-                      value={followersSearch}
-                      onChange={(e) => setFollowersSearch(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                    {followers.length === 0 && (
-                      <div className="text-center text-muted-foreground">
-                        No followers yet
-                      </div>
-                    )}
-                    {followers
-                      .filter((f: User) =>
-                        typeof f === "object"
-                          ? f.fullname
-                              ?.toLowerCase()
-                              .includes(followersSearch.toLowerCase()) ||
-                            f.username
-                              ?.toLowerCase()
-                              .includes(followersSearch.toLowerCase())
-                          : true
-                      )
-                      .map((f: User, i: number) => (
-                        <div
-                          key={f._id || f.id || i}
-                          className="flex items-center justify-between p-2 hover:bg-muted rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage
-                                src={
-                                  f.avatar ||
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                    f.fullname || f.username || "User"
-                                  )}&size=40`
-                                }
-                                alt={f.fullname || f.username || "User"}
-                              />
-                              <AvatarFallback>
-                                {(f.fullname || f.username || "U").charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <p className="font-semibold text-sm">
-                                  {f.fullname || f.username || "User"}
-                                </p>
-                              </div>
-                              <p className="text-muted-foreground text-xs">
-                                @{f.username || "user"}
-                              </p>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            Follow
-                          </Button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center gap-4">
+          <Skeleton className="w-32 h-32 rounded-full" />
+          <div className="space-y-2 text-center">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-border">
-          <TabsList className="w-full h-auto p-0 bg-transparent">
-            <div className="flex w-full">
-              {[
-                { value: "posts", label: "Posts" },
-                { value: "replies", label: "Replies" },
-                { value: "highlights", label: "Highlights" },
-                { value: "articles", label: "Articles" },
-                { value: "media", label: "Media" },
-                { value: "likes", label: "Likes" },
-              ].map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary hover:bg-muted/50 py-4"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </div>
-          </TabsList>
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p className="text-muted-foreground">User not found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col items-center gap-6">
+        <Avatar className="w-32 h-32">
+          <AvatarImage
+            src={
+              user.avatar ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                user.fullname
+              )}&size=128`
+            }
+            alt={user.fullname}
+          />
+          <AvatarFallback>
+            {user.fullname
+              .split(" ")
+              .map((n) => n[0])
+              .join("")}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">{user.fullname}</h1>
+          <p className="text-muted-foreground">@{user.username}</p>
         </div>
 
-        <TabsContent value="posts" className="mt-0">
-          <div className="divide-y divide-border">
-            {/* Repost */}
-            <Card className="rounded-none border-0 border-b">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-                  <Repeat2 className="w-4 h-4" />
-                  <span>You reposted</span>
-                </div>
+        <div className="flex gap-4 text-muted-foreground">
+          {user.location && (
+            <div className="flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              <span>{user.location}</span>
+            </div>
+          )}
+          {user.joinDate && (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>
+                Joined{" "}
+                {new Date(user.joinDate).toLocaleString("default", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+            </div>
+          )}
+        </div>
 
-                <div className="flex gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        "CHRISTJIL"
-                      )}&size=40`}
-                      alt="CHRISTJIL"
-                    />
-                    <AvatarFallback>CJ</AvatarFallback>
-                  </Avatar>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={handleStartChat}
+        >
+          <MessageSquare className="w-4 h-4" />
+          Message
+        </Button>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-bold">CHRISTJIL</span>
-                      <Badge variant="secondary" className="text-xs">
-                        🇳🇬
-                      </Badge>
-                      <span className="text-muted-foreground text-sm">
-                        @christjil_gh
-                      </span>
-                      <span className="text-muted-foreground text-sm">·</span>
-                      <span className="text-muted-foreground text-sm">
-                        Apr 23, 2024
-                      </span>
-                      <div className="ml-auto flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                        <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+          </TabsList>
 
-                    <div className="text-sm">
-                      <p className="font-semibold mb-2">
-                        6 reasons why you should trust God:
-                      </p>
-                      <div className="space-y-1">
-                        <p>• He knows you by name.</p>
-                        <p className="text-muted-foreground ml-4">
-                          Isaiah 43:1
-                        </p>
-                        <p>• He will fight for you.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          <TabsContent value="posts" className="mt-6">
+            <div className="grid gap-4">
+              {posts.length === 0 ? (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground">No posts yet</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                posts.map((post) => <BlogPostCard key={post._id} post={post} />)
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="media" className="mt-6">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No media yet</p>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="replies">
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No replies yet</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="highlights">
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No highlights yet</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="articles">
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No articles yet</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="media">
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No media yet</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="likes">
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No likes yet</p>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

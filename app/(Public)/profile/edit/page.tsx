@@ -1,350 +1,309 @@
 "use client";
 
-import type React from "react";
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Camera, MapPin, Link, Calendar, User } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/components/useSession";
-import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
 
-export default function Page() {
+interface User {
+  _id: string;
+  fullname: string;
+  username: string;
+  email: string;
+  avatar?: string;
+  location?: string;
+  bio?: string;
+}
+
+// Skeleton component for profile edit form
+function ProfileEditSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="w-20 h-20 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <Skeleton className="h-4 w-16 mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-4 w-16 mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-4 w-12 mb-2" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function ProfileEditPage() {
   const router = useRouter();
-  const { refetch } = useSession();
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     fullname: "",
     username: "",
-    bio: "",
+    email: "",
     location: "",
-    website: "",
-    birthDate: "",
-    avatar: "",
+    bio: "",
   });
-  const [avatarPreview, setAvatarPreview] = useState("");
 
   useEffect(() => {
-    async function fetchProfile() {
+    async function fetchUser() {
       setLoading(true);
       try {
         const res = await fetch("/api/users");
         const data = await res.json();
         if (res.ok && data.user) {
+          setUser(data.user);
           setFormData({
             fullname: data.user.fullname || "",
             username: data.user.username || "",
-            bio: data.user.bio || "",
+            email: data.user.email || "",
             location: data.user.location || "",
-            website: data.user.website || "",
-            birthDate: data.user.birthDate
-              ? data.user.birthDate.slice(0, 10)
-              : "",
-            avatar: data.user.avatar || "",
+            bio: data.user.bio || "",
           });
-          setAvatarPreview(
-            data.user.avatar ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                data.user.fullname || "User"
-              )}&size=128`
-          );
         }
       } finally {
         setLoading(false);
       }
     }
-    fetchProfile();
+    fetchUser();
   }, []);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleAvatarChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (avatarPreview && avatarPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
-
-      setLoading(true);
-      try {
-        const url = await uploadToCloudinary(file, "avatars");
-        if (!url) throw new Error("No URL returned from Cloudinary");
-        setFormData((prev) => ({ ...prev, avatar: url }));
-      } catch (error) {
-        console.error("Avatar upload error:", error);
-        setAvatarPreview(
-          formData.avatar ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              formData.fullname || "User"
-            )}&size=128`
-        );
-        alert("Failed to upload avatar. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
     try {
-      console.log("Saving user data:", formData); // Debug log
       const res = await fetch("/api/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullname: formData.fullname,
-          username: formData.username,
-          bio: formData.bio,
-          location: formData.location,
-          website: formData.website,
-          birthDate: formData.birthDate,
-          avatar: formData.avatar,
-        }),
+        body: JSON.stringify(formData),
       });
-      const data = await res.json();
-      console.log("Save response:", data); // Debug log
       if (res.ok) {
-        if (refetch) {
-          refetch();
-        }
         router.push("/profile");
+      } else {
+        alert("Failed to update profile");
       }
-    } catch (error) {
-      console.error("Save error:", error); // Debug log
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push("/profile");
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSaving(true);
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await fetch("/api/users/avatar", {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        // Refresh user data
+        const userRes = await fetch("/api/users");
+        const userData = await userRes.json();
+        if (userRes.ok && userData.user) {
+          setUser(userData.user);
+        }
+      } else {
+        alert("Failed to upload avatar");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
+    return <ProfileEditSkeleton />;
+  }
+
+  if (!user) {
     return (
-      <div className="p-8 text-center text-muted-foreground">Loading...</div>
+      <div className="p-8 text-center text-muted-foreground">
+        User not found
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              className="rounded-full"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold">Edit profile</h1>
-              <p className="text-sm text-muted-foreground">
-                @{formData.username}
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={handleSave}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Save
-          </Button>
-        </div>
-      </div>
-
-      {/* Avatar Section */}
-      <div className="px-4 flex justify-center mt-8 mb-8">
-        <div className="relative inline-block">
-          <Avatar className="w-32 h-32 border-4 border-background overflow-hidden">
-            {avatarPreview ? (
-              <AvatarImage
-                src={avatarPreview}
-                alt="Profile"
-                style={{
-                  objectFit: "cover",
-                  width: "100%",
-                  height: "100%",
-                }}
-              />
-            ) : (
-              <AvatarFallback className="bg-muted">
-                <User className="w-16 h-16 text-muted-foreground" />
-              </AvatarFallback>
-            )}
-          </Avatar>
-          <label
-            htmlFor="avatar-upload"
-            className="absolute inset-0 cursor-pointer"
-          >
-            <div className="w-full h-full bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-              <Camera className="w-6 h-6 text-white" />
-            </div>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-          </label>
-          {/* Online indicator */}
-          <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-background"></div>
-        </div>
-      </div>
-
-      {/* Form Section */}
-      <div className="p-4 space-y-6 max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Display Name</Label>
-              <Input
-                id="name"
-                value={formData.fullname}
-                onChange={(e) => handleInputChange("fullname", e.target.value)}
-                placeholder="Your display name"
-                maxLength={50}
-              />
-              <p className="text-xs text-muted-foreground">
-                {formData.fullname.length}/50
-              </p>
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Avatar Section */}
+            <div className="flex items-center gap-4">
+              <Avatar className="w-20 h-20">
+                <AvatarImage
+                  src={
+                    user.avatar ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user.fullname
+                    )}&size=80`
+                  }
+                  alt={user.fullname}
+                />
+                <AvatarFallback className="text-2xl">
+                  {user.fullname
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                  id="avatar-input"
+                />
+                <label
+                  htmlFor="avatar-input"
+                  className="cursor-pointer text-sm text-primary hover:underline"
+                >
+                  Change avatar
+                </label>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                  @
-                </span>
+            {/* Form Fields */}
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="fullname"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Full Name
+                </label>
+                <Input
+                  id="fullname"
+                  value={formData.fullname}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullname: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Username
+                </label>
                 <Input
                   id="username"
                   value={formData.username}
                   onChange={(e) =>
-                    handleInputChange("username", e.target.value)
+                    setFormData({ ...formData, username: e.target.value })
                   }
-                  placeholder="username"
-                  className="pl-8"
-                  maxLength={30}
+                  required
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                {formData.username.length}/30
-              </p>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={formData.bio}
-                onChange={(e) => handleInputChange("bio", e.target.value)}
-                placeholder="Tell us about yourself..."
-                className="min-h-[100px] resize-none"
-                maxLength={160}
-              />
-              <p className="text-xs text-muted-foreground">
-                {formData.bio.length}/160
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Additional Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <div>
+                <label
+                  htmlFor="location"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Location
+                </label>
                 <Input
                   id="location"
                   value={formData.location}
                   onChange={(e) =>
-                    handleInputChange("location", e.target.value)
+                    setFormData({ ...formData, location: e.target.value })
                   }
-                  placeholder="Where are you located?"
-                  className="pl-10"
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <div className="relative">
-                <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) => handleInputChange("website", e.target.value)}
-                  placeholder="https://yourwebsite.com"
-                  className="pl-10"
-                  type="url"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="birthDate">Birth Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  id="birthDate"
-                  value={formData.birthDate}
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium mb-2">
+                  Bio
+                </label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
                   onChange={(e) =>
-                    handleInputChange("birthDate", e.target.value)
+                    setFormData({ ...formData, bio: e.target.value })
                   }
-                  type="date"
-                  className="pl-10"
+                  rows={4}
+                  placeholder="Tell us about yourself..."
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                This won&apos;t be shown publicly. It helps us show you relevant
-                content and ads.
-              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <div className="flex gap-4 pt-4">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            className="flex-1 bg-transparent"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Save Changes
-          </Button>
-        </div>
-      </div>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/profile")}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

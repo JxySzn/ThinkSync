@@ -18,6 +18,7 @@ interface User {
   website?: string;
   bio?: string;
   birthDate?: string;
+  id?: string; // For backwards compatibility with some components
 }
 
 interface Session {
@@ -63,9 +64,8 @@ export function useSession() {
 
   const signOut = async () => {
     try {
-      // Clear the token cookie by setting it to expire
-      document.cookie =
-        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      // Call the signout API to clear the cookie server-side
+      await fetch("/api/auth/signout", { method: "POST" });
 
       setSession({
         user: null,

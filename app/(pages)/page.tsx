@@ -1,16 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  BookOpen,
-  Users,
-  GitBranch,
-  Quote,
-  FileText,
-  Target,
-} from "lucide-react";
-import Image from "next/image";
+import { BookOpen, Users, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,9 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SessionRedirect } from "@/components/SessionRedirect";
+import ContactForm from "@/components/ContactForm";
+import FAQ from "@/components/FAQ";
+import About from "@/components/About";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 60 },
@@ -40,9 +33,9 @@ const staggerContainer = {
 const features = [
   {
     icon: Users,
-    title: "Smart Group Formation",
+    title: "Group Formation",
     description:
-      "Connect with researchers who share your interests and expertise. Our AI-powered matching helps you find the perfect collaborators.",
+      "Connect with researchers who share your interests and expertise. Share ideas, form study groups, and collaborate on projects seamlessly.",
   },
   {
     icon: BookOpen,
@@ -51,95 +44,34 @@ const features = [
       "Share and discover research materials, datasets, and references in a centralized, searchable repository.",
   },
   {
-    icon: FileText,
-    title: "Collaborative Writing",
-    description:
-      "Co-author papers with real-time editing, commenting, and suggestion features designed for academic writing.",
-  },
-  {
-    icon: Target,
-    title: "Milestone Tracking",
-    description:
-      "Set research goals, track progress, and celebrate achievements with visual timelines and progress indicators.",
-  },
-  {
     icon: GitBranch,
     title: "Version Control",
     description:
-      "Never lose your work with comprehensive version history, branching, and merge capabilities for all your documents.",
-  },
-  {
-    icon: Quote,
-    title: "Citation Management",
-    description:
-      "Automatically format citations, manage bibliographies, and ensure proper attribution across all your research.",
+      "Never lose your work with comprehensive version history,to never loose track of your progress.",
   },
 ];
 
 const testimonials = [
   {
-    name: "Dr. Sarah Chen",
-    role: "PhD Candidate, MIT",
-    avatar: "/placeholder.svg?height=40&width=40",
+    name: "Levi Okoye",
+    role: "Graduate Student, NIIT",
+    avatar: "/testimonial1.jpeg",
     content:
-      "This platform revolutionized how our research team collaborates. The version control for academic papers is a game-changer.",
+      "ThinkSync made it easy to find collaborators for my thesis. The group formation and milestone tracking features kept our research on track and organized.",
   },
   {
-    name: "Prof. Michael Rodriguez",
-    role: "Research Director, Stanford",
-    avatar: "/placeholder.svg?height=40&width=40",
+    name: "Arun Maini",
+    role: "Research Supervisor, University of Lagos",
+    avatar: "/testimonial2.jpg",
     content:
-      "Finally, a tool that understands the unique needs of academic research. The citation management alone saves us hours every week.",
+      "As a supervisor, I love the version control and collaborative writing tools. I can review drafts, leave comments, and help my students improve their work in real time.",
   },
   {
-    name: "Emma Thompson",
-    role: "Graduate Student, Oxford",
-    avatar: "/placeholder.svg?height=40&width=40",
+    name: "Fisayo Fosudo",
+    role: "Data Scientist, Research Community Member",
+    avatar: "/testimonial3.jpeg",
     content:
-      "Finding research collaborators has never been easier. I've connected with amazing researchers from around the world.",
-  },
-];
-
-const pricingPlans = [
-  {
-    name: "Student",
-    price: "Free",
-    description: "Perfect for individual students and early-career researchers",
-    features: [
-      "Up to 3 active projects",
-      "5GB storage",
-      "Basic citation tools",
-      "Community access",
-    ],
-    popular: false,
-  },
-  {
-    name: "Researcher",
-    price: "$19",
-    period: "/month",
-    description: "Ideal for active researchers and small teams",
-    features: [
-      "Unlimited projects",
-      "50GB storage",
-      "Advanced citation management",
-      "Priority support",
-      "Team collaboration tools",
-    ],
-    popular: true,
-  },
-  {
-    name: "Institution",
-    price: "Custom",
-    description:
-      "Tailored solutions for universities and research institutions",
-    features: [
-      "Unlimited everything",
-      "Custom integrations",
-      "Advanced analytics",
-      "Dedicated support",
-      "SSO integration",
-    ],
-    popular: false,
+      "The resource library and citation management tools are invaluable. Sharing datasets and keeping references organized has never been easier for our team.",
   },
 ];
 
@@ -172,12 +104,6 @@ export default function LandingPage() {
             animate="animate"
             variants={staggerContainer}
           >
-            <motion.div variants={fadeInUp}>
-              <Badge variant="secondary" className="mb-4">
-                🔬 Trusted by 10,000+ researchers worldwide
-              </Badge>
-            </motion.div>
-
             <motion.h1
               className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight"
               variants={fadeInUp}
@@ -208,26 +134,15 @@ export default function LandingPage() {
                 Get Started
               </Button>
             </motion.div>
-
-            <motion.div className="mt-12 sm:mt-16" variants={fadeInUp}>
-              <div className="relative mx-auto w-full max-w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl" />
-                <Image
-                  src="/placeholder.svg?height=600&width=1000"
-                  alt="Research collaboration platform dashboard"
-                  width={1000}
-                  height={600}
-                  className="relative w-full h-auto rounded-xl border bg-background/50 shadow-2xl max-w-full"
-                  priority
-                />
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 sm:py-32 w-full flex justify-center">
+      <section
+        id="features"
+        className="py-20 sm:py-32 w-full flex justify-center"
+      >
         <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="mx-auto max-w-2xl text-center"
@@ -273,41 +188,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="border-y bg-muted/50 py-20 w-full flex justify-center">
-        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-          <motion.div
-            className="grid grid-cols-2 gap-8 md:grid-cols-4"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            {[
-              { number: "10,000+", label: "Active Researchers" },
-              { number: "50,000+", label: "Papers Collaborated" },
-              { number: "500+", label: "Universities" },
-              { number: "99.9%", label: "Uptime" },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                className="text-center"
-                variants={fadeInUp}
-              >
-                <div className="text-3xl font-bold sm:text-4xl">
-                  {stat.number}
-                </div>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      {/* About Section */}
+      <About id="about" />
+
+      {/* FAQ Section */}
+      <FAQ id="faq" />
 
       {/* Testimonials Section */}
-      <section className="py-20 sm:py-32 w-full flex justify-center">
+      <section
+        id="Testimonials"
+        className="py-20 sm:py-32 w-full flex justify-center"
+      >
         <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           <motion.div
             className="mx-auto max-w-2xl text-center"
@@ -317,7 +208,7 @@ export default function LandingPage() {
             variants={fadeInUp}
           >
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Trusted by researchers worldwide
+              Trusted By The Tech community Best Minds
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               See what our community has to say about their research experience
@@ -340,9 +231,7 @@ export default function LandingPage() {
                     </blockquote>
                     <div className="mt-6 flex items-center gap-4">
                       <Avatar>
-                        <AvatarImage
-                          src={testimonial.avatar || "/placeholder.svg"}
-                        />
+                        <AvatarImage src={testimonial.avatar} />
                         <AvatarFallback>
                           {testimonial.name
                             .split(" ")
@@ -365,118 +254,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 sm:py-32 w-full flex justify-center">
-        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-          <motion.div
-            className="mx-auto max-w-2xl text-center"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Choose your research plan
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Start free and scale as your research grows
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-8 lg:grid-cols-3"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            {pricingPlans.map((plan, index) => (
-              <motion.div key={index} variants={fadeInUp}>
-                <Card
-                  className={`relative h-full ${
-                    plan.popular ? "border-primary shadow-lg" : ""
-                  }`}
-                >
-                  {plan.popular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      Most Popular
-                    </Badge>
-                  )}
-                  <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <div className="mt-4">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      {plan.period && (
-                        <span className="text-muted-foreground">
-                          {plan.period}
-                        </span>
-                      )}
-                    </div>
-                    <CardDescription className="mt-4">
-                      {plan.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li
-                          key={featureIndex}
-                          className="flex items-center gap-3"
-                        >
-                          <div className="h-2 w-2 rounded-full bg-primary" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className="mt-8 w-full"
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      {plan.price === "Custom"
-                        ? "Contact Sales"
-                        : "Get Started"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section className="bg-primary py-20 text-primary-foreground w-full flex justify-center">
-        <div className="container px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-          <motion.div
-            className="mx-auto max-w-2xl text-center"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to transform your research?
-            </h2>
-            <p className="mt-4 text-lg text-primary-foreground/80">
-              Join thousands of researchers who are already collaborating more
-              effectively
-            </p>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <Button size="lg" variant="secondary" className="h-12 px-8">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-12 px-8 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
-              >
-                Schedule Demo
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <ContactForm id="contact" />
     </div>
   );
 }

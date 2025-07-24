@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Mail, Phone } from "lucide-react";
 
-export default function ContactForm() {
+export default function ContactForm({ id }: { id?: string }) {
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
+    <div id={id} className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

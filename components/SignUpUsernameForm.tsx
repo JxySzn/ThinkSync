@@ -1,70 +1,114 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
+
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserRound, CheckCircle, XCircle, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useSignupFlow } from "./useSignupFlow";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
-  AlertDialogContent,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { UserRound, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-export function SignUpUsernameForm({
+interface SignUpUsernameFormProps extends React.ComponentProps<"form"> {
+  email?: string;
+}
+
+// Skeleton component for username form
+function UsernameFormSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <Skeleton className="w-20 h-20 rounded-full" />
+      </div>
+      <div className="grid gap-6">
+        <div className="grid gap-3">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function SignUpUsernameFormContent({
   className,
+  email,
   ...props
-}: React.ComponentProps<"form">) {
+}: SignUpUsernameFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { email } = useSignupFlow();
   const [username, setUsername] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<
     "idle" | "checking" | "available" | "taken"
   >("idle");
+  const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showLeaveAlert, setShowLeaveAlert] = useState(false);
 
-  // Navigation guard
+  // Prevent navigation away from the page
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = "You will lose your progress and have to start again.";
+      e.returnValue = "";
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
 
-  // Intercept navigation (e.g., back arrow, Link)
-  useEffect(() => {
     const handler = (e: PopStateEvent) => {
       e.preventDefault();
       setShowLeaveAlert(true);
     };
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
-  }, [setShowLeaveAlert]);
 
-  // Generate initial username when component mounts
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handler);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handler);
+    };
+  }, []);
+
+  // Generate initial username
   useEffect(() => {
     const generateInitialUsername = async () => {
       const userEmail = email || searchParams.get("email");
       if (userEmail && !username) {
-        await generateRandomUsername(userEmail);
+        setIsGenerating(true);
+        try {
+          const response = await fetch("/api/auth/generate-username", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: userEmail }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.username) {
+            setUsername(data.username);
+            setUsernameStatus("available");
+          }
+        } catch {
+          console.error("Error generating initial username");
+        } finally {
+          setIsGenerating(false);
+        }
       }
     };
+
     generateInitialUsername();
   }, [email, searchParams, username]);
 
-  // Check username availability with debouncing
   const checkUsernameAvailability = useCallback(
     async (usernameToCheck: string) => {
       if (!usernameToCheck || usernameToCheck.length < 3) {
@@ -164,6 +208,10 @@ export function SignUpUsernameForm({
     }
   };
 
+  if (loading) {
+    return <UsernameFormSkeleton />;
+  }
+
   return (
     <form
       className={cn("flex flex-col gap-6", className)}
@@ -197,7 +245,7 @@ export function SignUpUsernameForm({
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               {usernameStatus === "checking" && (
-                <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+                <Skeleton className="w-4 h-4 rounded-full" />
               )}
               {usernameStatus === "available" && (
                 <CheckCircle className="h-4 w-4 text-green-500" />
@@ -228,7 +276,7 @@ export function SignUpUsernameForm({
           >
             {isGenerating ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                <Skeleton className="mr-2 w-4 h-4 rounded-full" />
                 Generating...
               </>
             ) : (
@@ -266,5 +314,13 @@ export function SignUpUsernameForm({
         </AlertDialogContent>
       </AlertDialog>
     </form>
+  );
+}
+
+export function SignUpUsernameForm(props: SignUpUsernameFormProps) {
+  return (
+    <Suspense fallback={<UsernameFormSkeleton />}>
+      <SignUpUsernameFormContent {...props} />
+    </Suspense>
   );
 }

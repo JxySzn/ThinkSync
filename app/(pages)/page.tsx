@@ -1,7 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Users, GitBranch } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Users,
+  GitBranch,
+  Quote,
+  FileText,
+  Target,
+} from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -76,23 +86,87 @@ const testimonials = [
 ];
 
 export default function LandingPage() {
+  useEffect(() => {
+    function animateConstellations(canvasId: string) {
+      const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+      }
+      resize();
+
+      const STAR_COUNT = 60;
+      const stars = Array.from({ length: STAR_COUNT }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.5,
+        dx: (Math.random() - 0.5) * 0.3,
+        dy: (Math.random() - 0.5) * 0.3,
+      }));
+
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        for (const star of stars) {
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        for (let i = 0; i < stars.length; i++) {
+          for (let j = i + 1; j < stars.length; j++) {
+            const a = stars[i],
+              b = stars[j];
+            const dist = Math.hypot(a.x - b.x, a.y - b.y);
+            if (dist < 80) {
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      function update() {
+        for (const star of stars) {
+          star.x += star.dx;
+          star.y += star.dy;
+          if (star.x < 0 || star.x > canvas.width) star.dx *= -1;
+          if (star.y < 0 || star.y > canvas.height) star.dy *= -1;
+        }
+      }
+
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+      loop();
+
+      window.addEventListener("resize", resize);
+    }
+
+    animateConstellations("constellation-canvas");
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center overflow-x-hidden">
       <SessionRedirect />
       {/* Hero Section */}
       <section className="relative overflow-hidden py-12 sm:py-20 md:py-32 w-full flex justify-center">
-        {/* Background Video */}
-        <div className="absolute inset-0 z-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="h-full w-full object-cover"
-          >
-            <source src="/videos/Hero.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+        {/* Constellation Background */}
+        <div className="absolute inset-0 z-0 bg-background">
+          <canvas
+            id="constellation-canvas"
+            className="absolute inset-0 w-full h-full"
+            style={{ pointerEvents: "none" }}
+          />
           {/* Overlay for better text readability */}
           <div className="absolute inset-0 bg-black/40" />
         </div>
@@ -128,10 +202,11 @@ export default function LandingPage() {
               variants={fadeInUp}
             >
               <Button
+                asChild
                 size="lg"
                 className="h-12 px-8 bg-primary hover:cursor-pointer text-foreground"
               >
-                Get Started
+                <Link href="/sign_in">Get Started</Link>
               </Button>
             </motion.div>
           </motion.div>

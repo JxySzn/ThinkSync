@@ -2,15 +2,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  BookOpen,
-  Users,
-  GitBranch,
-  Quote,
-  FileText,
-  Target,
-} from "lucide-react";
+import { BookOpen, Users, GitBranch } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {

@@ -25,7 +25,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useSession } from "./useSession";
 import SearchBar from "./SearchBar";
 import {
@@ -132,66 +131,76 @@ export default function Navbar2() {
                     <Bell className="h-5 w-5" />
                   </Button>
 
-                  {/* User Avatar Dropdown */}
+                  {/* User Avatar */}
                   {!loading && user && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="relative h-8 w-8 rounded-full"
-                        >
-                          <Avatar className="h-8 w-8 overflow-hidden">
-                            <AvatarImage
-                              src={
-                                user.avatar ||
-                                "/placeholder.svg?height=128&width=128"
-                              }
-                              alt={user.fullname}
-                              style={{
-                                objectFit: "cover",
-                                width: "100%",
-                                height: "100%",
-                              }}
-                            />
-                            <AvatarFallback>
-                              {getAvatarInitials(user.fullname)}
-                            </AvatarFallback>
-                          </Avatar>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-56"
-                        align="end"
-                        forceMount
-                      >
-                        <DropdownMenuLabel className="font-normal">
-                          <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">
-                              {user.fullname}
-                            </p>
-                            <p className="text-xs leading-none text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <Link href="/profile">
-                          <DropdownMenuItem>
-                            <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
-                          </DropdownMenuItem>
-                        </Link>
-                        <DropdownMenuItem>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Settings</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={signOut}>
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Sign out</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      className="relative h-8 w-8 rounded-full p-0"
+                      onClick={() => {
+                        if (window.innerWidth < 768) {
+                          setMobileMenuOpen(true);
+                        }
+                      }}
+                    >
+                      <Avatar className="h-8 w-8 overflow-hidden">
+                        <AvatarImage
+                          src={
+                            user.avatar ||
+                            "/placeholder.svg?height=128&width=128"
+                          }
+                          alt={user.fullname}
+                          style={{
+                            objectFit: "cover",
+                            width: "100%",
+                            height: "100%",
+                          }}
+                        />
+                        <AvatarFallback>
+                          {getAvatarInitials(user.fullname)}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Desktop Only Dropdown */}
+                      <div className="hidden md:block">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="absolute inset-0" />
+                          <DropdownMenuContent
+                            className="w-56"
+                            align="end"
+                            forceMount
+                          >
+                            <DropdownMenuLabel className="font-normal">
+                              <div className="flex flex-col space-y-1">
+                                <p className="text-sm font-medium leading-none">
+                                  {user.fullname}
+                                </p>
+                                <p className="text-xs leading-none text-muted-foreground">
+                                  {user.email}
+                                </p>
+                              </div>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <Link href="/profile">
+                              <DropdownMenuItem>
+                                <User className="mr-2 h-4 w-4" />
+                                <span>Profile</span>
+                              </DropdownMenuItem>
+                            </Link>
+                            <Link href="/settings">
+                              <DropdownMenuItem>
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Settings</span>
+                              </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={signOut}>
+                              <LogOut className="mr-2 h-4 w-4" />
+                              <span>Sign out</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Button>
                   )}
 
                   {/* Mobile menu button */}
@@ -213,7 +222,6 @@ export default function Navbar2() {
           </AnimatePresence>
         </nav>
       </header>
-
       {/* Mobile Navigation - Slides in from right */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -252,7 +260,11 @@ export default function Navbar2() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {/* Mobile Actions */}
                   <div className="space-y-2">
-                    <Button variant="ghost" className="w-full justify-start">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => router.push("/notifications")}
+                    >
                       <Bell className="mr-3 h-4 w-4" />
                       Notifications
                     </Button>
@@ -266,14 +278,18 @@ export default function Navbar2() {
                       <Plus className="mr-3 h-4 w-4" />
                       Create Post
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <User className="mr-3 h-4 w-4" />
-                      Profile
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Settings className="mr-3 h-4 w-4" />
-                      Settings
-                    </Button>
+                    <Link href="/profile" className="w-full">
+                      <Button variant="ghost" className="w-full justify-start">
+                        <User className="mr-3 h-4 w-4" />
+                        Profile
+                      </Button>
+                    </Link>
+                    <Link href="/settings" className="w-full">
+                      <Button variant="ghost" className="w-full justify-start">
+                        <Settings className="mr-3 h-4 w-4" />
+                        Settings
+                      </Button>
+                    </Link>
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
@@ -285,16 +301,41 @@ export default function Navbar2() {
                   </div>
                 </div>
 
-                {/* Footer with Theme Toggle */}
-                <div className="p-4 border-t">
-                  <ThemeToggle />
-                </div>
+                {/* Footer with User Info */}
+                {user && (
+                  <div className="p-4 border-t">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={
+                            user.avatar ||
+                            "/placeholder.svg?height=128&width=128"
+                          }
+                          alt={user.fullname}
+                          style={{
+                            objectFit: "cover",
+                            width: "100%",
+                            height: "100%",
+                          }}
+                        />
+                        <AvatarFallback>
+                          {getAvatarInitials(user.fullname)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium">{user.fullname}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
         )}
-      </AnimatePresence>
-
+      </AnimatePresence>{" "}
       {/* AlertDialog for auth required */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>

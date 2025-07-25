@@ -133,16 +133,15 @@ export default function Navbar2() {
 
                   {/* User Avatar */}
                   {!loading && user && (
-                    <Button
-                      variant="ghost"
-                      className="relative h-8 w-8 rounded-full p-0"
-                      onClick={() => {
-                        if (window.innerWidth < 768) {
-                          setMobileMenuOpen(true);
-                        }
-                      }}
-                    >
-                      <Avatar className="h-8 w-8 overflow-hidden">
+                    <div className="relative">
+                      <Avatar
+                        className="h-8 w-8 overflow-hidden cursor-pointer"
+                        onClick={() => {
+                          if (window.innerWidth < 768) {
+                            setMobileMenuOpen(true);
+                          }
+                        }}
+                      >
                         <AvatarImage
                           src={
                             user.avatar ||
@@ -163,7 +162,9 @@ export default function Navbar2() {
                       {/* Desktop Only Dropdown */}
                       <div className="hidden md:block">
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="absolute inset-0" />
+                          <DropdownMenuTrigger asChild>
+                            <div className="absolute inset-0 cursor-pointer" />
+                          </DropdownMenuTrigger>
                           <DropdownMenuContent
                             className="w-56"
                             align="end"
@@ -200,7 +201,7 @@ export default function Navbar2() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </Button>
+                    </div>
                   )}
 
                   {/* Mobile menu button */}
@@ -278,18 +279,22 @@ export default function Navbar2() {
                       <Plus className="mr-3 h-4 w-4" />
                       Create Post
                     </Button>
-                    <Link href="/profile" className="w-full">
-                      <Button variant="ghost" className="w-full justify-start">
-                        <User className="mr-3 h-4 w-4" />
-                        Profile
-                      </Button>
-                    </Link>
-                    <Link href="/settings" className="w-full">
-                      <Button variant="ghost" className="w-full justify-start">
-                        <Settings className="mr-3 h-4 w-4" />
-                        Settings
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => router.push("/profile")}
+                    >
+                      <User className="mr-3 h-4 w-4" />
+                      Profile
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => router.push("/settings")}
+                    >
+                      <Settings className="mr-3 h-4 w-4" />
+                      Settings
+                    </Button>
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"

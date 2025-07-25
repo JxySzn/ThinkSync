@@ -1,16 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import TiptapLink from "@tiptap/extension-link";
+import TiptapImage from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
+import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
 import {
   Bold,
   Italic,
-  Link,
   List,
   ListOrdered,
-  Heading,
   Quote,
   Code,
   ImageIcon,
@@ -53,9 +65,43 @@ export default function Component() {
   const router = useRouter();
   const [coverImage, setCoverImage] = useState("");
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapLink.configure({
+        openOnClick: false,
+      }),
+      TiptapImage.configure({
+        HTMLAttributes: {
+          class: "rounded-lg float-left mr-4 my-2",
+          style: "max-width: 50%; max-height: 400px; object-fit: contain;",
+        },
+      }),
+      Placeholder.configure({
+        placeholder: "Write your post content here...",
+      }),
+    ],
+    content: "",
+    editorProps: {
+      attributes: {
+        class:
+          "min-h-[400px] prose prose-lg dark:prose-invert focus:outline-none",
+      },
+    },
+    onCreate({ editor }) {
+      editor.commands.focus("end");
+    },
+    editable: true,
+    injectCSS: true,
+    enableCoreExtensions: true,
+    immediatelyRender: false, // Fix for SSR hydration
+  });
 
   const handlePreview = () => {
     if (!coverImage) {
@@ -70,20 +116,25 @@ export default function Component() {
       });
       return;
     }
-    if (!content) {
+    if (!editor?.getHTML() || editor?.getHTML() === "<p></p>") {
       toast.error("Content Required", {
         description: "Please add some content to your post.",
       });
       return;
     }
-    toast.success("Loading Preview", {
-      description: "Preparing to show your post preview.",
+    const newState = !isPreview;
+    setIsPreview(newState);
+    toast.success(newState ? "Switched to Preview" : "Switched to Edit", {
+      style: { background: "#22c55e", color: "white" },
     });
-    setIsPreview(!isPreview);
   };
 
   const handleExit = () => {
-    if (coverImage || title || content) {
+    if (
+      coverImage ||
+      title ||
+      (editor?.getHTML() && editor?.getHTML() !== "<p></p>")
+    ) {
       setShowExitDialog(true);
     } else {
       router.back();
@@ -102,9 +153,56 @@ export default function Component() {
       <div className="flex flex-col min-h-screen bg-background">
         <header className="flex items-center justify-between p-4 border-b bg-card text-card-foreground">
           <h1 className="text-lg font-semibold">Preview Post</h1>
-          <Button variant="ghost" size="sm" onClick={() => setIsPreview(false)}>
-            Back to Edit
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsPreview(false);
+                toast.success("Switched to Edit", {
+                  style: { background: "#22c55e", color: "white" },
+                });
+              }}
+            >
+              Back to Edit
+            </Button>
+            <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={handleExit}
+                >
+                  <X className="w-4 h-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Are you sure you want to leave?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You have unsaved changes. Leaving now will result in losing
+                    your progress forever.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Button variant="outline" onClick={handleSaveDraft}>
+                    Save as Draft
+                  </Button>
+                  <AlertDialogAction
+                    onClick={() => router.back()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Leave
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </header>
 
         <main className="flex-1 p-8 max-w-6xl mx-auto w-full">
@@ -120,9 +218,10 @@ export default function Component() {
             </div>
           )}
           <h1 className="text-5xl font-bold mb-6">{title}</h1>
-          <div className="prose prose-xl max-w-none dark:prose-invert">
-            {content}
-          </div>
+          <div
+            className="prose prose-xl max-w-none dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
+          ></div>
         </main>
       </div>
     );
@@ -175,20 +274,69 @@ export default function Component() {
         </div>
       </header>
 
-      <main className="flex flex-1">
+      <main className="flex-1">
         <div className="flex-1 p-8 max-w-6xl mx-auto w-full">
           <div className="space-y-8">
-            <Button
-              variant="outline"
-              className="w-fit bg-transparent text-lg"
-              onClick={() => {
-                // Handle cover image upload
-                const imageUrl = "https://example.com/image.jpg"; // Replace with actual upload
-                setCoverImage(imageUrl);
-              }}
-            >
-              Add a cover image
-            </Button>
+            <div className="space-y-4">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const imageUrl = await uploadToCloudinary(
+                        file,
+                        "blog_covers"
+                      );
+                      setCoverImage(imageUrl);
+                      toast.success("Cover image uploaded!", {
+                        style: { background: "#22c55e", color: "white" },
+                      });
+                    } catch (error) {
+                      toast.error("Failed to upload image");
+                      console.error("Upload error:", error);
+                    }
+                  }
+                }}
+              />
+              {coverImage ? (
+                <div className="relative">
+                  <div className="w-full h-[300px] bg-muted rounded-lg relative overflow-hidden">
+                    <Image
+                      src={coverImage}
+                      alt="Cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw"
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={() => {
+                      setCoverImage("");
+                      toast.success("Cover image removed", {
+                        style: { background: "#22c55e", color: "white" },
+                      });
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-fit bg-transparent text-lg"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Add a cover image
+                </Button>
+              )}
+            </div>
 
             <Input
               className="text-4xl md:text-6xl lg:text-5xl font-extrabold border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto py-2 md:py-3 lg:py-4"
@@ -196,78 +344,308 @@ export default function Component() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-            <Input
-              className="text-muted-foreground text-xl md:text-2xl lg:text-2xl border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto py-1 md:py-1.5 lg:py-2"
-              placeholder="Add up to 4 tags..."
-            />
-
-            <div className="flex items-center gap-2 border-b pb-4">
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <Bold className="w-4 h-4" />
-                <span className="sr-only">Bold</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <Italic className="w-4 h-4" />
-                <span className="sr-only">Italic</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <Link className="w-4 h-4" />
-                <span className="sr-only">Link</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <List className="w-4 h-4" />
-                <span className="sr-only">Unordered List</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <ListOrdered className="w-4 h-4" />
-                <span className="sr-only">Ordered List</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <Heading className="w-4 h-4" />
-                <span className="sr-only">Heading</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <Quote className="w-4 h-4" />
-                <span className="sr-only">Quote</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <Code className="w-4 h-4" />
-                <span className="sr-only">Code</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="w-8 h-8">
-                <ImageIcon className="w-4 h-4" />
-                <span className="sr-only">Image</span>
-              </Button>
-              <Popover>
-                <PopoverTrigger asChild>
+            <div className="flex gap-2 items-start">
+              <div className="flex-1">
+                <div className="flex gap-2">
+                  <Input
+                    className="text-muted-foreground text-xl md:text-2xl lg:text-2xl border-2 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 h-auto"
+                    placeholder="Add up to 4 tags..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (tagInput && tags.length < 4) {
+                          setTags([...tags, tagInput.replace(/^#/, "")]);
+                          setTagInput("");
+                          toast.success("Tag added", {
+                            style: { background: "#22c55e", color: "white" },
+                          });
+                        }
+                      }
+                    }}
+                  />
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 ml-auto"
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (tagInput && tags.length < 4) {
+                        setTags([...tags, tagInput.replace(/^#/, "")]);
+                        setTagInput("");
+                        toast.success("Tag added", {
+                          style: { background: "#22c55e", color: "white" },
+                        });
+                      }
+                    }}
+                    className="h-12"
                   >
-                    <MoreHorizontal className="w-4 h-4" />
-                    <span className="sr-only">More options</span>
+                    Add Tag
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-40">
-                  <Button
-                    variant="ghost"
-                    className="w-full h-8 flex items-center justify-start gap-2 text-sm"
-                    onClick={() => setContent("")}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Clear content
-                  </Button>
-                </PopoverContent>
-              </Popover>
+                </div>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      className="text-lg py-1 px-3"
+                      onClick={() => {
+                        setTags(tags.filter((_, i) => i !== index));
+                        toast.success("Tag removed", {
+                          style: { background: "#22c55e", color: "white" },
+                        });
+                      }}
+                    >
+                      #{tag}
+                      <X className="w-4 h-4 ml-2 cursor-pointer" />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <Textarea
-              className="min-h-[400px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none text-base md:text-lg lg:text-xl"
-              placeholder="Write your post content here..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+            <TooltipProvider>
+              <div className="flex items-center gap-2 border-b pb-4">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() => editor?.chain().focus().toggleBold().run()}
+                      data-active={editor?.isActive("bold")}
+                    >
+                      <Bold className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Bold</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor?.chain().focus().toggleItalic().run()
+                      }
+                      data-active={editor?.isActive("italic")}
+                    >
+                      <Italic className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Italic</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .toggleHeading({ level: 1 })
+                          .run()
+                      }
+                      data-active={editor?.isActive("heading", { level: 1 })}
+                    >
+                      <div className="text-lg font-bold">H1</div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Large Heading</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .toggleHeading({ level: 2 })
+                          .run()
+                      }
+                      data-active={editor?.isActive("heading", { level: 2 })}
+                    >
+                      <div className="text-base font-bold">H2</div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Medium Heading</TooltipContent>
+                </Tooltip>
+                <Separator orientation="vertical" className="h-6" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor?.chain().focus().toggleBulletList().run()
+                      }
+                      data-active={editor?.isActive("bulletList")}
+                    >
+                      <List className="w-4 h-4" />
+                      <span className="sr-only">Bullet List</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Bullet List</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor?.chain().focus().toggleOrderedList().run()
+                      }
+                      data-active={editor?.isActive("orderedList")}
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                      <span className="sr-only">Numbered List</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Numbered List</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor?.chain().focus().toggleBlockquote().run()
+                      }
+                      data-active={editor?.isActive("blockquote")}
+                    >
+                      <Quote className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Block Quote</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        editor?.chain().focus().toggleCodeBlock().run()
+                      }
+                      data-active={editor?.isActive("codeBlock")}
+                    >
+                      <Code className="w-4 h-4" />
+                      <span className="sr-only">Code</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Code Block</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      id="image-upload"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const imageUrl = await uploadToCloudinary(
+                              file,
+                              "blog_content"
+                            );
+                            editor
+                              ?.chain()
+                              .focus()
+                              .setImage({ src: imageUrl })
+                              .run();
+                            toast.success("Image uploaded!", {
+                              style: { background: "#22c55e", color: "white" },
+                            });
+                          } catch (error) {
+                            toast.error("Failed to upload image");
+                            console.error("Upload error:", error);
+                          }
+                        }
+                      }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>Insert File</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8"
+                      onClick={() =>
+                        document.getElementById("image-upload")?.click()
+                      }
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      <span className="sr-only">Image</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Add Image</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 ml-auto"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                      <span className="sr-only">More options</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>More Options</TooltipContent>
+                </Tooltip>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 ml-auto"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                      <span className="sr-only">More options</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-40">
+                    <Button
+                      variant="ghost"
+                      className="w-full h-8 flex items-center justify-start gap-2 text-sm"
+                      onClick={() => {
+                        editor?.commands.clearContent();
+                        toast.success("Content cleared", {
+                          style: { background: "#22c55e", color: "white" },
+                        });
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Clear content
+                    </Button>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </TooltipProvider>
+
+            <div className="border-2 rounded-lg p-4">
+              <EditorContent editor={editor} className="prose-lg" />
+            </div>
           </div>
         </div>
       </main>

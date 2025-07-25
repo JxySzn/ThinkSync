@@ -1,11 +1,11 @@
 import React from "react";
 
-interface FAQProps {
+interface FaqProps {
   id: string;
 }
 
-const FAQ = ({ id }: FAQProps) => {
-  return <div id={id}>FAQ</div>;
+const Faq = ({ id }: FaqProps) => {
+  return <div id={id}>Faq</div>;
 };
 
-export default FAQ;
+export default Faq;

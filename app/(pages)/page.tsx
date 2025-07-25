@@ -15,7 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SessionRedirect } from "@/components/SessionRedirect";
 import ContactForm from "@/components/ContactForm";
-import FAQ from "@/components/FAQ";
+import Faq from "@/components/Faq";
 import About from "@/components/About";
 
 const fadeInUp = {
@@ -259,7 +259,7 @@ export default function LandingPage() {
       <About id="about" />
 
       {/* FAQ Section */}
-      <FAQ id="faq" />
+      <Faq id="faq" />
 
       {/* Testimonials Section */}
       <section

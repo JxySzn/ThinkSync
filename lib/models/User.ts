@@ -3,7 +3,7 @@ import { Schema, models, model } from "mongoose";
 const UserSchema = new Schema({
   fullname: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String }, // Made optional for OAuth users
   otp: { type: String },
   verified: { type: Boolean, default: false },
   username: { type: String, unique: true, sparse: true },
@@ -17,6 +17,10 @@ const UserSchema = new Schema({
   bio: { type: String },
   birthDate: { type: Date },
   coverPhoto: { type: String },
+  // GitHub OAuth fields
+  githubId: { type: String, unique: true, sparse: true },
+  githubUsername: { type: String },
+  githubAccessToken: { type: String },
 });
 
 export default models.User || model("User", UserSchema);

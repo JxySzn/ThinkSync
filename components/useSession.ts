@@ -64,18 +64,27 @@ export function useSession() {
 
   const signOut = async () => {
     try {
-      // Call the signout API to clear the cookie server-side
-      await fetch("/api/auth/signout", { method: "POST" });
-
-      setSession({
-        user: null,
-        loading: false,
-        error: null,
+      const response = await fetch("/api/auth/signout", {
+        method: "POST",
+        credentials: "include", // Important: include credentials to ensure cookies are sent
       });
 
-      router.push("/");
-    } catch {
-      console.error("Error signing out");
+      if (response.ok) {
+        // Clear local state
+        setSession({
+          user: null,
+          loading: false,
+          error: null,
+        });
+
+        // Redirect to home page
+        router.push("/");
+        router.refresh(); // Force a router refresh to update the UI
+      } else {
+        console.error("Error signing out:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
   };
 

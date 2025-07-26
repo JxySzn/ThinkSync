@@ -146,6 +146,11 @@ export function SignInForm({
             "Please verify your email before signing in.",
             warningToastOptions
           );
+        } else if (data.error.includes("created with Google or GitHub")) {
+          toast.error(
+            "Please use the Google or GitHub sign-in button for this account.",
+            warningToastOptions
+          );
         } else {
           toast.error(data.error || "Sign in failed.", errorToastOptions);
         }

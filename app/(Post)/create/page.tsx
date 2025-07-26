@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Textarea } from "@/components/ui/textarea";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TiptapLink from "@tiptap/extension-link";
@@ -26,17 +26,17 @@ import {
   Quote,
   Code,
   ImageIcon,
-  MoreHorizontal,
   X,
   Users,
   Flag,
   Trash2,
+  Layout,
+  LayoutGrid,
+  Eye,
+  Heart,
+  Share2,
+  MessageSquare,
 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -57,6 +57,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -69,6 +70,19 @@ export default function Component() {
   const [tagInput, setTagInput] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [isPostCard, setIsPostCard] = useState(false);
+  const [engagementGoals, setEngagementGoals] = useState({
+    likes: [] as number[],
+    comments: [] as number[],
+    views: [] as number[],
+    shares: [] as number[],
+  });
+  const [goalInputs, setGoalInputs] = useState({
+    likes: "",
+    comments: "",
+    views: "",
+    shares: "",
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -152,8 +166,35 @@ export default function Component() {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         <header className="flex items-center justify-between p-4 border-b bg-card text-card-foreground">
-          <h1 className="text-lg font-semibold">Preview Post</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold">
+              {isPostCard ? "Post Card Preview" : "Full Post Preview"}
+            </h1>
+          </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsPostCard(!isPostCard);
+                toast.success(
+                  `Switched to ${
+                    isPostCard ? "Full Post" : "Post Card"
+                  } Preview`,
+                  {
+                    style: { background: "#22c55e", color: "white" },
+                  }
+                );
+              }}
+              className="flex items-center gap-2"
+            >
+              {isPostCard ? (
+                <Layout className="w-4 h-4" />
+              ) : (
+                <LayoutGrid className="w-4 h-4" />
+              )}
+              View as {isPostCard ? "Full Post" : "Post Card"}
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -206,7 +247,7 @@ export default function Component() {
         </header>
 
         <main className="flex-1 p-8 max-w-6xl mx-auto w-full">
-          {coverImage && (
+          {!isPostCard && coverImage && (
             <div className="w-full h-[400px] bg-muted rounded-lg mb-8 relative overflow-hidden">
               <Image
                 src={coverImage}
@@ -217,11 +258,109 @@ export default function Component() {
               />
             </div>
           )}
-          <h1 className="text-5xl font-bold mb-6">{title}</h1>
-          <div
-            className="prose prose-xl max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
-          ></div>
+          {isPostCard ? (
+            <div className="border rounded-lg overflow-hidden bg-card">
+              <div className="aspect-[16/9] relative">
+                <Image
+                  src={coverImage}
+                  alt="Cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw"
+                />
+              </div>
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-2">{title}</h2>
+                <div className="flex gap-2 mb-4">
+                  {tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="line-clamp-3 text-muted-foreground">
+                  {editor?.getText() || ""}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-5xl font-bold mb-4">{title}</h1>
+              <div className="flex gap-2 mb-4">
+                {tags.map((tag, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="text-lg py-1 px-3"
+                  >
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+              {(engagementGoals.likes.length > 0 ||
+                engagementGoals.comments.length > 0 ||
+                engagementGoals.views.length > 0 ||
+                engagementGoals.shares.length > 0) && (
+                <div className="flex flex-col gap-3 mb-6 text-muted-foreground border rounded-lg p-4 bg-muted/10">
+                  <h3 className="text-lg font-semibold mb-2">
+                    Engagement Milestones
+                  </h3>
+                  {engagementGoals.likes.map((goal, index) => (
+                    <div key={`likes-${index}`} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-rose-500" />
+                        <span className="text-sm">Likes</span>
+                        <span className="font-medium text-sm">
+                          • Goal: {goal}
+                        </span>
+                      </div>
+                      <Progress value={33} className="h-2 w-full bg-muted" />
+                    </div>
+                  ))}
+                  {engagementGoals.comments.map((goal, index) => (
+                    <div key={`comments-${index}`} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm">Comments</span>
+                        <span className="font-medium text-sm">
+                          • Goal: {goal}
+                        </span>
+                      </div>
+                      <Progress value={33} className="h-2 w-full bg-muted" />
+                    </div>
+                  ))}
+                  {engagementGoals.views.map((goal, index) => (
+                    <div key={`views-${index}`} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-green-500" />
+                        <span className="text-sm">Views</span>
+                        <span className="font-medium text-sm">
+                          • Goal: {goal}
+                        </span>
+                      </div>
+                      <Progress value={33} className="h-2 w-full bg-muted" />
+                    </div>
+                  ))}
+                  {engagementGoals.shares.map((goal, index) => (
+                    <div key={`shares-${index}`} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm">Shares</span>
+                        <span className="font-medium text-sm">
+                          • Goal: {goal}
+                        </span>
+                      </div>
+                      <Progress value={33} className="h-2 w-full bg-muted" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div
+                className="prose prose-xl max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
+              ></div>
+            </>
+          )}
         </main>
       </div>
     );
@@ -286,17 +425,27 @@ export default function Component() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    const loadingToast = toast.loading(
+                      "Uploading cover image..."
+                    );
                     try {
                       const imageUrl = await uploadToCloudinary(
                         file,
                         "blog_covers"
                       );
                       setCoverImage(imageUrl);
+                      toast.dismiss(loadingToast);
                       toast.success("Cover image uploaded!", {
                         style: { background: "#22c55e", color: "white" },
                       });
                     } catch (error) {
-                      toast.error("Failed to upload image");
+                      toast.dismiss(loadingToast);
+                      toast.error("Failed to upload image", {
+                        description:
+                          "Please check your internet connection and try again.",
+                        style: { background: "#ef4444", color: "white" },
+                        duration: 5000,
+                      });
                       console.error("Upload error:", error);
                     }
                   }
@@ -349,7 +498,7 @@ export default function Component() {
                 <div className="flex gap-2">
                   <Input
                     className="text-muted-foreground text-xl md:text-2xl lg:text-2xl border-2 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 h-auto"
-                    placeholder="Add up to 4 tags..."
+                    placeholder="Add searchable tags (e.g. research, science, tech)..."
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -401,6 +550,234 @@ export default function Component() {
                 </div>
               </div>
             </div>
+
+            {/* Engagement Goals Display in Edit Mode */}
+            {(engagementGoals.likes.length > 0 ||
+              engagementGoals.comments.length > 0 ||
+              engagementGoals.views.length > 0 ||
+              engagementGoals.shares.length > 0) && (
+              <div className="flex flex-col gap-3 mb-6 text-muted-foreground border rounded-lg p-4 bg-muted/10">
+                <h3 className="text-lg font-semibold mb-2">
+                  Engagement Milestones
+                </h3>
+                {engagementGoals.likes.map((goal, index) => (
+                  <div
+                    key={`likes-${index}`}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-rose-500" />
+                      <span>Likes Goal: {goal}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Likes Goal</DialogTitle>
+                          </DialogHeader>
+                          <Input
+                            type="number"
+                            defaultValue={goal}
+                            onChange={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (newValue > 0) {
+                                const newLikes = [...engagementGoals.likes];
+                                newLikes[index] = newValue;
+                                setEngagementGoals((prev) => ({
+                                  ...prev,
+                                  likes: newLikes,
+                                }));
+                              }
+                            }}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() =>
+                          setEngagementGoals((prev) => ({
+                            ...prev,
+                            likes: prev.likes.filter((_, i) => i !== index),
+                          }))
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {engagementGoals.comments.map((goal, index) => (
+                  <div
+                    key={`comments-${index}`}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-blue-500" />
+                      <span>Comments Goal: {goal}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Comments Goal</DialogTitle>
+                          </DialogHeader>
+                          <Input
+                            type="number"
+                            defaultValue={goal}
+                            onChange={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (newValue > 0) {
+                                const newComments = [
+                                  ...engagementGoals.comments,
+                                ];
+                                newComments[index] = newValue;
+                                setEngagementGoals((prev) => ({
+                                  ...prev,
+                                  comments: newComments,
+                                }));
+                              }
+                            }}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() =>
+                          setEngagementGoals((prev) => ({
+                            ...prev,
+                            comments: prev.comments.filter(
+                              (_, i) => i !== index
+                            ),
+                          }))
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {engagementGoals.views.map((goal, index) => (
+                  <div
+                    key={`views-${index}`}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-green-500" />
+                      <span>Views Goal: {goal}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Views Goal</DialogTitle>
+                          </DialogHeader>
+                          <Input
+                            type="number"
+                            defaultValue={goal}
+                            onChange={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (newValue > 0) {
+                                const newViews = [...engagementGoals.views];
+                                newViews[index] = newValue;
+                                setEngagementGoals((prev) => ({
+                                  ...prev,
+                                  views: newViews,
+                                }));
+                              }
+                            }}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() =>
+                          setEngagementGoals((prev) => ({
+                            ...prev,
+                            views: prev.views.filter((_, i) => i !== index),
+                          }))
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {engagementGoals.shares.map((goal, index) => (
+                  <div
+                    key={`shares-${index}`}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Share2 className="w-4 h-4 text-purple-500" />
+                      <span>Shares Goal: {goal}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Edit Shares Goal</DialogTitle>
+                          </DialogHeader>
+                          <Input
+                            type="number"
+                            defaultValue={goal}
+                            onChange={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (newValue > 0) {
+                                const newShares = [...engagementGoals.shares];
+                                newShares[index] = newValue;
+                                setEngagementGoals((prev) => ({
+                                  ...prev,
+                                  shares: newShares,
+                                }));
+                              }
+                            }}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() =>
+                          setEngagementGoals((prev) => ({
+                            ...prev,
+                            shares: prev.shares.filter((_, i) => i !== index),
+                          }))
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <TooltipProvider>
               <div className="flex items-center gap-2 border-b pb-4">
@@ -559,6 +936,8 @@ export default function Component() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          const loadingToast =
+                            toast.loading("Uploading image...");
                           try {
                             const imageUrl = await uploadToCloudinary(
                               file,
@@ -569,11 +948,18 @@ export default function Component() {
                               .focus()
                               .setImage({ src: imageUrl })
                               .run();
+                            toast.dismiss(loadingToast);
                             toast.success("Image uploaded!", {
                               style: { background: "#22c55e", color: "white" },
                             });
                           } catch (error) {
-                            toast.error("Failed to upload image");
+                            toast.dismiss(loadingToast);
+                            toast.error("Failed to upload image", {
+                              description:
+                                "Please check your internet connection and try again.",
+                              style: { background: "#ef4444", color: "white" },
+                              duration: 5000,
+                            });
                             console.error("Upload error:", error);
                           }
                         }
@@ -599,52 +985,49 @@ export default function Component() {
                   </TooltipTrigger>
                   <TooltipContent>Add Image</TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="w-8 h-8 ml-auto"
+                      className="w-8 h-8 ml-auto hover:bg-destructive/10 hover:text-destructive"
                     >
-                      <MoreHorizontal className="w-4 h-4" />
-                      <span className="sr-only">More options</span>
+                      <Trash2 className="w-4 h-4" />
+                      <span className="sr-only">Clear content</span>
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>More Options</TooltipContent>
-                </Tooltip>
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 ml-auto"
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                      <span className="sr-only">More options</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-40">
-                    <Button
-                      variant="ghost"
-                      className="w-full h-8 flex items-center justify-start gap-2 text-sm"
-                      onClick={() => {
-                        editor?.commands.clearContent();
-                        toast.success("Content cleared", {
-                          style: { background: "#22c55e", color: "white" },
-                        });
-                      }}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Clear content
-                    </Button>
-                  </PopoverContent>
-                </Popover>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Clear Content?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove all content from your post. This action
+                        cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          editor?.commands.clearContent();
+                          toast.success("Content cleared", {
+                            style: { background: "#22c55e", color: "white" },
+                          });
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Clear Content
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </TooltipProvider>
 
-            <div className="border-2 rounded-lg p-4">
-              <EditorContent editor={editor} className="prose-lg" />
+            <div className="border-2 rounded-lg p-4 overflow-hidden">
+              <EditorContent
+                editor={editor}
+                className="prose-lg max-w-none [&_img]:max-w-full [&_img]:!my-4 [&_p]:break-words [&_pre]:overflow-auto"
+              />
             </div>
           </div>
         </div>
@@ -659,31 +1042,151 @@ export default function Component() {
           <DialogTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2">
               <Flag className="w-4 h-4" />
-              Set Milestones
+              Set Engagement Goals
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
-              <DialogTitle>Set Project Milestones</DialogTitle>
+              <DialogTitle>Set Post Engagement Goals</DialogTitle>
               <DialogDescription>
-                Define key milestones for your research project.
+                Set multiple engagement targets for your post.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-4">
-                <Input
-                  className="text-base md:text-lg lg:text-xl"
-                  placeholder="Milestone title..."
-                />
-                <Textarea
-                  className="text-base md:text-lg lg:text-xl"
-                  placeholder="Milestone description..."
-                />
-                <Input type="date" />
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-rose-500" />
+                    <label className="text-sm font-medium">Target Likes</label>
+                  </div>
+                  <Input
+                    type="text"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    min="0"
+                    className="text-lg"
+                    placeholder="100"
+                    value={goalInputs.likes}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setGoalInputs((prev) => ({
+                        ...prev,
+                        likes: value,
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-blue-500" />
+                    <label className="text-sm font-medium">
+                      Target Comments
+                    </label>
+                  </div>
+                  <Input
+                    type="text"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    min="0"
+                    className="text-lg"
+                    placeholder="50"
+                    value={goalInputs.comments}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setGoalInputs((prev) => ({
+                        ...prev,
+                        comments: value,
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-green-500" />
+                    <label className="text-sm font-medium">Target Views</label>
+                  </div>
+                  <Input
+                    type="text"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    min="0"
+                    className="text-lg"
+                    placeholder="1000"
+                    value={goalInputs.views}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setGoalInputs((prev) => ({
+                        ...prev,
+                        views: value,
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-purple-500" />
+                    <label className="text-sm font-medium">Target Shares</label>
+                  </div>
+                  <Input
+                    type="text"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    min="0"
+                    className="text-lg"
+                    placeholder="25"
+                    value={goalInputs.shares}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      setGoalInputs((prev) => ({
+                        ...prev,
+                        shares: value,
+                      }));
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit">Save Milestones</Button>
+              <Button
+                onClick={(e) => {
+                  const closeDialog = (e.target as HTMLElement).closest(
+                    "dialog"
+                  );
+                  const newGoals = {
+                    likes: goalInputs.likes
+                      ? [...engagementGoals.likes, parseInt(goalInputs.likes)]
+                      : engagementGoals.likes,
+                    comments: goalInputs.comments
+                      ? [
+                          ...engagementGoals.comments,
+                          parseInt(goalInputs.comments),
+                        ]
+                      : engagementGoals.comments,
+                    views: goalInputs.views
+                      ? [...engagementGoals.views, parseInt(goalInputs.views)]
+                      : engagementGoals.views,
+                    shares: goalInputs.shares
+                      ? [...engagementGoals.shares, parseInt(goalInputs.shares)]
+                      : engagementGoals.shares,
+                  };
+                  setEngagementGoals(newGoals);
+                  setGoalInputs({
+                    likes: "",
+                    comments: "",
+                    views: "",
+                    shares: "",
+                  });
+                  toast.success("Engagement goals updated!", {
+                    style: { background: "#22c55e", color: "white" },
+                  });
+                  if (closeDialog) {
+                    closeDialog.close();
+                  }
+                }}
+                className="w-full"
+              >
+                Set Goals
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

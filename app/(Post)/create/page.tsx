@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useSession } from "@/components/useSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -19,12 +21,12 @@ import TiptapImage from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
 import {
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Quote,
-  Code,
+  Bold as BoldIcon,
+  Italic as ItalicIcon,
+  List as ListIcon,
+  ListOrdered as ListOrderedIcon,
+  Quote as QuoteIcon,
+  Code as CodeIcon,
   ImageIcon,
   X,
   Users,
@@ -61,9 +63,11 @@ import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { User } from "@/components/useSession";
 
 export default function Component() {
   const router = useRouter();
+  const { user } = useSession() as { user: User | null };
   const [coverImage, setCoverImage] = useState("");
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -87,7 +91,45 @@ export default function Component() {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2],
+          HTMLAttributes: {
+            1: { class: "text-4xl font-bold mb-4" },
+            2: { class: "text-3xl font-bold mb-3" },
+          },
+        },
+        bold: {
+          HTMLAttributes: {
+            class: "font-bold",
+          },
+        },
+        italic: {
+          HTMLAttributes: {
+            class: "italic",
+          },
+        },
+        bulletList: {
+          HTMLAttributes: {
+            class: "list-disc ml-4",
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: "list-decimal ml-4",
+          },
+        },
+        blockquote: {
+          HTMLAttributes: {
+            class: "border-l-4 border-primary pl-4 my-4 bg-primary/5",
+          },
+        },
+        code: {
+          HTMLAttributes: {
+            class: "bg-gray-100 rounded px-1",
+          },
+        },
+      }),
       TiptapLink.configure({
         openOnClick: false,
       }),
@@ -297,6 +339,34 @@ export default function Component() {
                   </Badge>
                 ))}
               </div>
+              <div className="flex items-center gap-3 mb-6">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage
+                    src={user?.avatar || ""}
+                    alt={user?.fullname || "User"}
+                    className="object-cover"
+                  />
+                  <AvatarFallback>
+                    {user?.fullname?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-semibold">
+                    {user?.fullname || "Loading..."}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    @{user?.username || "loading"}
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  •{" "}
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
               {(engagementGoals.likes.length > 0 ||
                 engagementGoals.comments.length > 0 ||
                 engagementGoals.views.length > 0 ||
@@ -356,8 +426,9 @@ export default function Component() {
                 </div>
               )}
               <div
-                className="prose prose-xl max-w-none dark:prose-invert"
+                className="prose prose-xl max-w-none dark:prose-invert container mx-auto"
                 dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }}
+                style={{ maxWidth: "100%", overflowWrap: "break-word" }}
               ></div>
             </>
           )}
@@ -790,7 +861,7 @@ export default function Component() {
                       onClick={() => editor?.chain().focus().toggleBold().run()}
                       data-active={editor?.isActive("bold")}
                     >
-                      <Bold className="w-4 h-4" />
+                      <BoldIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Bold</TooltipContent>
@@ -807,7 +878,7 @@ export default function Component() {
                       }
                       data-active={editor?.isActive("italic")}
                     >
-                      <Italic className="w-4 h-4" />
+                      <ItalicIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Italic</TooltipContent>
@@ -866,7 +937,7 @@ export default function Component() {
                       }
                       data-active={editor?.isActive("bulletList")}
                     >
-                      <List className="w-4 h-4" />
+                      <ListIcon className="w-4 h-4" />
                       <span className="sr-only">Bullet List</span>
                     </Button>
                   </TooltipTrigger>
@@ -884,7 +955,7 @@ export default function Component() {
                       }
                       data-active={editor?.isActive("orderedList")}
                     >
-                      <ListOrdered className="w-4 h-4" />
+                      <ListOrderedIcon className="w-4 h-4" />
                       <span className="sr-only">Numbered List</span>
                     </Button>
                   </TooltipTrigger>
@@ -902,7 +973,7 @@ export default function Component() {
                       }
                       data-active={editor?.isActive("blockquote")}
                     >
-                      <Quote className="w-4 h-4" />
+                      <QuoteIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Block Quote</TooltipContent>
@@ -919,7 +990,7 @@ export default function Component() {
                       }
                       data-active={editor?.isActive("codeBlock")}
                     >
-                      <Code className="w-4 h-4" />
+                      <CodeIcon className="w-4 h-4" />
                       <span className="sr-only">Code</span>
                     </Button>
                   </TooltipTrigger>

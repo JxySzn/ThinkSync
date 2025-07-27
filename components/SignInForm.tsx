@@ -156,11 +156,27 @@ export function SignInForm({
         }
         return;
       }
-      toast.success("Sign in successful! Redirecting...", successToastOptions);
-      // Redirect to home page after a short delay
-      setTimeout(() => {
-        router.push("/home");
-      }, 1500);
+      toast.success(
+        "Sign in successful! Checking permissions...",
+        successToastOptions
+      );
+      // Check if user is admin and redirect accordingly
+      try {
+        const adminCheck = await fetch("/api/admin/check");
+        const adminData = await adminCheck.json();
+        setTimeout(() => {
+          if (adminData.isAdmin) {
+            router.push("/dashboard");
+          } else {
+            router.push("/home");
+          }
+        }, 1500);
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setTimeout(() => {
+          router.push("/home");
+        }, 1500);
+      }
     } catch {
       toast("Network error. Please try again.", warningToastOptions);
     }

@@ -1,7 +1,6 @@
 import {
   Home,
   Inbox,
-  Calendar,
   Search,
   Settings,
   User2,
@@ -54,9 +53,9 @@ const items = [
     icon: Inbox,
   },
   {
-    title: "Calendar",
-    url: "#",
-    icon: Calendar,
+    title: "Users",
+    url: "/users",
+    icon: User2,
   },
   {
     title: "Search",
@@ -77,7 +76,7 @@ const AdminSidebar = () => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/">
+              <Link href="/dashboard">
                 <Image src="/logo.svg" alt="logo" width={20} height={20} />
                 <span>Lama Dev</span>
               </Link>

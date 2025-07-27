@@ -29,9 +29,15 @@ export async function POST(req: NextRequest) {
   const valid = await comparePassword(password, user.password);
   if (!valid)
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const token = jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
   const res = NextResponse.json({ success: true });
   res.cookies.set("token", token, { httpOnly: true, path: "/" });
   return res;

@@ -19,6 +19,7 @@ export interface User {
   bio?: string;
   birthDate?: string;
   id?: string; // For backwards compatibility with some components
+  role: "admin" | "user";
 }
 
 interface Session {

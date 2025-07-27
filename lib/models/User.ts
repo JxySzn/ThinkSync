@@ -21,6 +21,8 @@ const UserSchema = new Schema({
   githubId: { type: String, unique: true, sparse: true },
   githubUsername: { type: String },
   githubAccessToken: { type: String },
+  // Role management
+  role: { type: String, enum: ["user", "admin"], default: "user" },
 });
 
 export default models.User || model("User", UserSchema);
